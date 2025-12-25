@@ -52,11 +52,12 @@ export function HeroSection() {
             </Button>
           </div>
           
-          {/* Stats preview */}
+          {/* Stats preview cards with glassmorphism */}
           <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <GlassPanel hover className="text-left">
+            {/* User Stats Card - Green accent */}
+            <GlassPanel hover accent="green" className="text-left">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center backdrop-blur-sm">
                   <span className="text-2xl">📊</span>
                 </div>
                 <div>
@@ -64,14 +65,15 @@ export function HeroSection() {
                   <p className="text-sm text-muted-foreground">Stars, commits, repos</p>
                 </div>
               </div>
-              <div className="h-24 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center border border-primary/20">
+              <div className="h-24 rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center border border-primary/20 backdrop-blur-sm">
                 <span className="text-muted-foreground font-mono text-sm">Preview Card</span>
               </div>
             </GlassPanel>
             
-            <GlassPanel hover className="text-left animate-float">
+            {/* Streak Tracker Card - Teal accent (active/highlighted) */}
+            <GlassPanel hover accent="teal" active className="text-left animate-float">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-lg bg-secondary/20 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-lg bg-secondary/20 flex items-center justify-center backdrop-blur-sm">
                   <span className="text-2xl">🔥</span>
                 </div>
                 <div>
@@ -79,14 +81,15 @@ export function HeroSection() {
                   <p className="text-sm text-muted-foreground">Current & longest streak</p>
                 </div>
               </div>
-              <div className="h-24 rounded-lg bg-gradient-to-br from-secondary/20 to-primary/20 flex items-center justify-center border border-secondary/20">
+              <div className="h-24 rounded-lg bg-gradient-to-br from-secondary/15 to-secondary/5 flex items-center justify-center border border-secondary/20 backdrop-blur-sm">
                 <span className="text-muted-foreground font-mono text-sm">Preview Card</span>
               </div>
             </GlassPanel>
             
-            <GlassPanel hover className="text-left">
+            {/* Languages Card - Purple accent */}
+            <GlassPanel hover accent="purple" className="text-left">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-lg bg-chart-3/20 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-lg bg-chart-3/20 flex items-center justify-center backdrop-blur-sm">
                   <span className="text-2xl">💻</span>
                 </div>
                 <div>
@@ -94,7 +97,7 @@ export function HeroSection() {
                   <p className="text-sm text-muted-foreground">Top programming languages</p>
                 </div>
               </div>
-              <div className="h-24 rounded-lg bg-gradient-to-br from-chart-3/20 to-chart-4/20 flex items-center justify-center border border-chart-3/20">
+              <div className="h-24 rounded-lg bg-gradient-to-br from-chart-3/15 to-chart-3/5 flex items-center justify-center border border-chart-3/20 backdrop-blur-sm">
                 <span className="text-muted-foreground font-mono text-sm">Preview Card</span>
               </div>
             </GlassPanel>
