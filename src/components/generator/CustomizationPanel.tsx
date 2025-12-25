@@ -27,6 +27,19 @@ const speeds = [
   { value: "fast", label: "Fast", icon: "🚀" },
 ];
 
+const gradientTypes = [
+  { value: "linear", label: "Linear", icon: "↗️" },
+  { value: "radial", label: "Radial", icon: "⭕" },
+];
+
+const gradientPresets = [
+  { name: "Purple Haze", start: "#667eea", end: "#764ba2" },
+  { name: "Sunset", start: "#f093fb", end: "#f5576c" },
+  { name: "Ocean", start: "#4facfe", end: "#00f2fe" },
+  { name: "Forest", start: "#38ef7d", end: "#11998e" },
+  { name: "Fire", start: "#f12711", end: "#f5af19" },
+  { name: "Night Sky", start: "#0f0c29", end: "#302b63" },
+];
 interface CustomizationPanelProps {
   config: CardConfig;
   updateConfig: (updates: Partial<CardConfig>) => void;
@@ -46,97 +59,216 @@ export function CustomizationPanel({ config, updateConfig }: CustomizationPanelP
           </TabsList>
 
           <TabsContent value="colors" className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            {/* Gradient Toggle */}
+            <div className="flex items-center justify-between p-3 rounded-lg bg-background/20 border border-border/20">
               <div>
-                <Label className="text-sm mb-2 block">Background</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="color"
-                    value={config.bgColor}
-                    onChange={(e) => updateConfig({ bgColor: e.target.value })}
-                    className="w-12 h-10 p-1 cursor-pointer bg-background/30 border-border/30"
-                  />
-                  <Input
-                    type="text"
-                    value={config.bgColor}
-                    onChange={(e) => updateConfig({ bgColor: e.target.value })}
-                    className="flex-1 font-mono text-sm bg-background/30 border-border/30"
-                  />
-                </div>
+                <Label className="text-sm">Gradient Background</Label>
+                <p className="text-xs text-muted-foreground">Use gradient instead of solid color</p>
               </div>
-              
-              <div>
-                <Label className="text-sm mb-2 block">Primary</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="color"
-                    value={config.primaryColor}
-                    onChange={(e) => updateConfig({ primaryColor: e.target.value })}
-                    className="w-12 h-10 p-1 cursor-pointer bg-background/30 border-border/30"
-                  />
-                  <Input
-                    type="text"
-                    value={config.primaryColor}
-                    onChange={(e) => updateConfig({ primaryColor: e.target.value })}
-                    className="flex-1 font-mono text-sm bg-background/30 border-border/30"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <Label className="text-sm mb-2 block">Secondary</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="color"
-                    value={config.secondaryColor}
-                    onChange={(e) => updateConfig({ secondaryColor: e.target.value })}
-                    className="w-12 h-10 p-1 cursor-pointer bg-background/30 border-border/30"
-                  />
-                  <Input
-                    type="text"
-                    value={config.secondaryColor}
-                    onChange={(e) => updateConfig({ secondaryColor: e.target.value })}
-                    className="flex-1 font-mono text-sm bg-background/30 border-border/30"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <Label className="text-sm mb-2 block">Text</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="color"
-                    value={config.textColor}
-                    onChange={(e) => updateConfig({ textColor: e.target.value })}
-                    className="w-12 h-10 p-1 cursor-pointer bg-background/30 border-border/30"
-                  />
-                  <Input
-                    type="text"
-                    value={config.textColor}
-                    onChange={(e) => updateConfig({ textColor: e.target.value })}
-                    className="flex-1 font-mono text-sm bg-background/30 border-border/30"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <Label className="text-sm mb-2 block">Border</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="color"
-                    value={config.borderColor}
-                    onChange={(e) => updateConfig({ borderColor: e.target.value })}
-                    className="w-12 h-10 p-1 cursor-pointer bg-background/30 border-border/30"
-                  />
-                  <Input
-                    type="text"
-                    value={config.borderColor}
-                    onChange={(e) => updateConfig({ borderColor: e.target.value })}
-                    className="flex-1 font-mono text-sm bg-background/30 border-border/30"
-                  />
-                </div>
-              </div>
+              <Switch
+                checked={config.gradientEnabled}
+                onCheckedChange={(v) => updateConfig({ gradientEnabled: v })}
+              />
             </div>
+
+            {config.gradientEnabled ? (
+              <div className="space-y-4">
+                {/* Gradient Presets */}
+                <div>
+                  <Label className="text-sm mb-2 block">Presets</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {gradientPresets.map((preset) => (
+                      <button
+                        key={preset.name}
+                        onClick={() => updateConfig({ gradientStart: preset.start, gradientEnd: preset.end })}
+                        className="h-8 rounded-md border border-border/30 transition-all hover:scale-105"
+                        style={{
+                          background: `linear-gradient(135deg, ${preset.start}, ${preset.end})`,
+                        }}
+                        title={preset.name}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Gradient Type */}
+                <div>
+                  <Label className="text-sm mb-2 block">Type</Label>
+                  <Select
+                    value={config.gradientType}
+                    onValueChange={(v) => updateConfig({ gradientType: v })}
+                  >
+                    <SelectTrigger className="bg-background/30 border-border/30">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {gradientTypes.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.icon} {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Gradient Angle (for linear) */}
+                {config.gradientType === "linear" && (
+                  <div>
+                    <Label className="text-sm mb-2 block">
+                      Angle: {config.gradientAngle}°
+                    </Label>
+                    <Slider
+                      value={[config.gradientAngle]}
+                      onValueChange={([v]) => updateConfig({ gradientAngle: v })}
+                      min={0}
+                      max={360}
+                      step={15}
+                      className="[&_[role=slider]]:bg-primary"
+                    />
+                  </div>
+                )}
+
+                {/* Gradient Colors */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm mb-2 block">Start Color</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="color"
+                        value={config.gradientStart}
+                        onChange={(e) => updateConfig({ gradientStart: e.target.value })}
+                        className="w-12 h-10 p-1 cursor-pointer bg-background/30 border-border/30"
+                      />
+                      <Input
+                        type="text"
+                        value={config.gradientStart}
+                        onChange={(e) => updateConfig({ gradientStart: e.target.value })}
+                        className="flex-1 font-mono text-sm bg-background/30 border-border/30"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm mb-2 block">End Color</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="color"
+                        value={config.gradientEnd}
+                        onChange={(e) => updateConfig({ gradientEnd: e.target.value })}
+                        className="w-12 h-10 p-1 cursor-pointer bg-background/30 border-border/30"
+                      />
+                      <Input
+                        type="text"
+                        value={config.gradientEnd}
+                        onChange={(e) => updateConfig({ gradientEnd: e.target.value })}
+                        className="flex-1 font-mono text-sm bg-background/30 border-border/30"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Preview */}
+                <div
+                  className="h-12 rounded-lg border border-border/30"
+                  style={{
+                    background: config.gradientType === "linear"
+                      ? `linear-gradient(${config.gradientAngle}deg, ${config.gradientStart}, ${config.gradientEnd})`
+                      : `radial-gradient(circle, ${config.gradientStart}, ${config.gradientEnd})`,
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm mb-2 block">Background</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="color"
+                      value={config.bgColor}
+                      onChange={(e) => updateConfig({ bgColor: e.target.value })}
+                      className="w-12 h-10 p-1 cursor-pointer bg-background/30 border-border/30"
+                    />
+                    <Input
+                      type="text"
+                      value={config.bgColor}
+                      onChange={(e) => updateConfig({ bgColor: e.target.value })}
+                      className="flex-1 font-mono text-sm bg-background/30 border-border/30"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label className="text-sm mb-2 block">Primary</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="color"
+                      value={config.primaryColor}
+                      onChange={(e) => updateConfig({ primaryColor: e.target.value })}
+                      className="w-12 h-10 p-1 cursor-pointer bg-background/30 border-border/30"
+                    />
+                    <Input
+                      type="text"
+                      value={config.primaryColor}
+                      onChange={(e) => updateConfig({ primaryColor: e.target.value })}
+                      className="flex-1 font-mono text-sm bg-background/30 border-border/30"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label className="text-sm mb-2 block">Secondary</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="color"
+                      value={config.secondaryColor}
+                      onChange={(e) => updateConfig({ secondaryColor: e.target.value })}
+                      className="w-12 h-10 p-1 cursor-pointer bg-background/30 border-border/30"
+                    />
+                    <Input
+                      type="text"
+                      value={config.secondaryColor}
+                      onChange={(e) => updateConfig({ secondaryColor: e.target.value })}
+                      className="flex-1 font-mono text-sm bg-background/30 border-border/30"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label className="text-sm mb-2 block">Text</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="color"
+                      value={config.textColor}
+                      onChange={(e) => updateConfig({ textColor: e.target.value })}
+                      className="w-12 h-10 p-1 cursor-pointer bg-background/30 border-border/30"
+                    />
+                    <Input
+                      type="text"
+                      value={config.textColor}
+                      onChange={(e) => updateConfig({ textColor: e.target.value })}
+                      className="flex-1 font-mono text-sm bg-background/30 border-border/30"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label className="text-sm mb-2 block">Border</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="color"
+                      value={config.borderColor}
+                      onChange={(e) => updateConfig({ borderColor: e.target.value })}
+                      className="w-12 h-10 p-1 cursor-pointer bg-background/30 border-border/30"
+                    />
+                    <Input
+                      type="text"
+                      value={config.borderColor}
+                      onChange={(e) => updateConfig({ borderColor: e.target.value })}
+                      className="flex-1 font-mono text-sm bg-background/30 border-border/30"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="layout" className="space-y-4">

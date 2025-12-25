@@ -157,18 +157,57 @@ function getAnimationStyles(animation: string, primaryColor: string, speed: stri
   return animations[animation] || animations.fadeIn;
 }
 
+// Generate gradient defs for SVG
+function getGradientDefs(p: any): string {
+  if (!p.gradient) return '';
+  
+  const id = 'bgGradient';
+  if (p.gradientType === 'radial') {
+    return `
+      <defs>
+        <radialGradient id="${id}" cx="50%" cy="50%" r="70%">
+          <stop offset="0%" stop-color="${p.gradientStart}"/>
+          <stop offset="100%" stop-color="${p.gradientEnd}"/>
+        </radialGradient>
+      </defs>`;
+  }
+  
+  // Convert angle to SVG gradient coordinates
+  const angle = p.gradientAngle || 135;
+  const angleRad = (angle - 90) * Math.PI / 180;
+  const x1 = 50 - Math.cos(angleRad) * 50;
+  const y1 = 50 - Math.sin(angleRad) * 50;
+  const x2 = 50 + Math.cos(angleRad) * 50;
+  const y2 = 50 + Math.sin(angleRad) * 50;
+  
+  return `
+    <defs>
+      <linearGradient id="${id}" x1="${x1}%" y1="${y1}%" x2="${x2}%" y2="${y2}%">
+        <stop offset="0%" stop-color="${p.gradientStart}"/>
+        <stop offset="100%" stop-color="${p.gradientEnd}"/>
+      </linearGradient>
+    </defs>`;
+}
+
+function getBgFill(p: any): string {
+  return p.gradient ? 'url(#bgGradient)' : p.bgColor;
+}
+
 function generateStatsSVG(p: any): string {
   const { stats, animation = 'fadeIn', speed = 'normal' } = p;
   const animStyles = getAnimationStyles(animation, p.primaryColor, speed);
+  const gradientDefs = getGradientDefs(p);
+  const bgFill = getBgFill(p);
   return `
 <svg width="${p.width}" height="${p.height}" viewBox="0 0 ${p.width} ${p.height}" xmlns="http://www.w3.org/2000/svg">
+  ${gradientDefs}
   <style>
     .title{font:600 16px 'Segoe UI',Ubuntu,sans-serif;fill:${p.textColor}}
     .stat-value{font:700 18px 'Segoe UI',Ubuntu,sans-serif}
     .stat-label{font:400 11px 'Segoe UI',Ubuntu,sans-serif;fill:${p.textColor};opacity:0.8}
     ${animStyles}
   </style>
-  <rect width="100%" height="100%" fill="${p.bgColor}" rx="${p.borderRadius}" ${p.showBorder ? `stroke="${p.borderColor}" stroke-width="1"` : ''}/>
+  <rect width="100%" height="100%" fill="${bgFill}" rx="${p.borderRadius}" ${p.showBorder ? `stroke="${p.borderColor}" stroke-width="1"` : ''}/>
   <g transform="translate(25, 25)" class="animate">
     <text class="title">${p.username}'s GitHub Stats</text>
     <g transform="translate(0, 45)" class="animate delay-1">
@@ -194,6 +233,8 @@ function generateStatsSVG(p: any): string {
 function generateLanguagesSVG(p: any): string {
   const { languages, animation = 'fadeIn', speed = 'normal' } = p;
   const animStyles = getAnimationStyles(animation, p.primaryColor, speed);
+  const gradientDefs = getGradientDefs(p);
+  const bgFill = getBgFill(p);
   const barWidth = p.width - 50;
   let offset = 0;
   const bars = languages.map((lang: any, i: number) => {
@@ -211,12 +252,13 @@ function generateLanguagesSVG(p: any): string {
 
   return `
 <svg width="${p.width}" height="${p.height}" viewBox="0 0 ${p.width} ${p.height}" xmlns="http://www.w3.org/2000/svg">
+  ${gradientDefs}
   <style>
     .title{font:600 16px 'Segoe UI',Ubuntu,sans-serif;fill:${p.textColor}}
     .lang-label{font:400 11px 'Segoe UI',Ubuntu,sans-serif;fill:${p.textColor}}
     ${animStyles}
   </style>
-  <rect width="100%" height="100%" fill="${p.bgColor}" rx="${p.borderRadius}" ${p.showBorder ? `stroke="${p.borderColor}" stroke-width="1"` : ''}/>
+  <rect width="100%" height="100%" fill="${bgFill}" rx="${p.borderRadius}" ${p.showBorder ? `stroke="${p.borderColor}" stroke-width="1"` : ''}/>
   <g transform="translate(25, 25)">
     <text class="title animate">Most Used Languages</text>
     <g transform="translate(0, 35)">${bars}</g>
@@ -228,15 +270,18 @@ function generateLanguagesSVG(p: any): string {
 function generateStreakSVG(p: any): string {
   const { animation = 'fadeIn', speed = 'normal' } = p;
   const animStyles = getAnimationStyles(animation, p.primaryColor, speed);
+  const gradientDefs = getGradientDefs(p);
+  const bgFill = getBgFill(p);
   return `
 <svg width="${p.width}" height="${p.height}" viewBox="0 0 ${p.width} ${p.height}" xmlns="http://www.w3.org/2000/svg">
+  ${gradientDefs}
   <style>
     .title{font:600 14px 'Segoe UI',Ubuntu,sans-serif;fill:${p.textColor}}
     .streak-num{font:700 28px 'Segoe UI',Ubuntu,sans-serif}
     .streak-label{font:400 10px 'Segoe UI',Ubuntu,sans-serif;fill:${p.textColor};opacity:0.7}
     ${animStyles}
   </style>
-  <rect width="100%" height="100%" fill="${p.bgColor}" rx="${p.borderRadius}" ${p.showBorder ? `stroke="${p.borderColor}" stroke-width="1"` : ''}/>
+  <rect width="100%" height="100%" fill="${bgFill}" rx="${p.borderRadius}" ${p.showBorder ? `stroke="${p.borderColor}" stroke-width="1"` : ''}/>
   <g transform="translate(${p.width / 2}, 20)" text-anchor="middle" class="animate">
     <text class="title">🔥 Contribution Streak</text>
   </g>
@@ -254,6 +299,8 @@ function generateStreakSVG(p: any): string {
 function generateQuoteSVG(p: any): string {
   const { animation = 'fadeIn', speed = 'normal' } = p;
   const animStyles = getAnimationStyles(animation, p.primaryColor, speed);
+  const gradientDefs = getGradientDefs(p);
+  const bgFill = getBgFill(p);
   const quotes = [
     { text: "First, solve the problem. Then, write the code.", author: "John Johnson" },
     { text: "Code is like humor. When you have to explain it, it's bad.", author: "Cory House" },
@@ -265,12 +312,13 @@ function generateQuoteSVG(p: any): string {
   
   return `
 <svg width="${p.width}" height="${p.height}" viewBox="0 0 ${p.width} ${p.height}" xmlns="http://www.w3.org/2000/svg">
+  ${gradientDefs}
   <style>
     .quote{font:italic 14px 'Segoe UI',Ubuntu,sans-serif;fill:${p.textColor}}
     .author{font:600 12px 'Segoe UI',Ubuntu,sans-serif;fill:${p.primaryColor}}
     ${animStyles}
   </style>
-  <rect width="100%" height="100%" fill="${p.bgColor}" rx="${p.borderRadius}" ${p.showBorder ? `stroke="${p.borderColor}" stroke-width="1"` : ''}/>
+  <rect width="100%" height="100%" fill="${bgFill}" rx="${p.borderRadius}" ${p.showBorder ? `stroke="${p.borderColor}" stroke-width="1"` : ''}/>
   <text x="25" y="35" class="quote animate" fill="${p.secondaryColor}" font-size="24">"</text>
   <text x="45" y="50" class="quote animate delay-1">${quote.text}</text>
   <text x="${p.width - 25}" y="${p.height - 25}" class="author animate delay-2" text-anchor="end">— ${quote.author}</text>
@@ -280,6 +328,8 @@ function generateQuoteSVG(p: any): string {
 function generateActivitySVG(p: any): string {
   const { animation = 'fadeIn', speed = 'normal' } = p;
   const animStyles = getAnimationStyles(animation, p.primaryColor, speed);
+  const gradientDefs = getGradientDefs(p);
+  const bgFill = getBgFill(p);
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const activity = p.activity || Array(7).fill(0).map(() => Math.floor(Math.random() * 10));
   const maxVal = Math.max(...activity, 1);
@@ -295,12 +345,13 @@ function generateActivitySVG(p: any): string {
 
   return `
 <svg width="${p.width}" height="${p.height}" viewBox="0 0 ${p.width} ${p.height}" xmlns="http://www.w3.org/2000/svg">
+  ${gradientDefs}
   <style>
     .title{font:600 14px 'Segoe UI',Ubuntu,sans-serif;fill:${p.textColor}}
     .day-label{font:400 9px 'Segoe UI',Ubuntu,sans-serif;fill:${p.textColor};opacity:0.7}
     ${animStyles}
   </style>
-  <rect width="100%" height="100%" fill="${p.bgColor}" rx="${p.borderRadius}" ${p.showBorder ? `stroke="${p.borderColor}" stroke-width="1"` : ''}/>
+  <rect width="100%" height="100%" fill="${bgFill}" rx="${p.borderRadius}" ${p.showBorder ? `stroke="${p.borderColor}" stroke-width="1"` : ''}/>
   <text x="25" y="20" class="title animate">📊 Weekly Activity</text>
   ${bars}
 </svg>`;
@@ -309,13 +360,16 @@ function generateActivitySVG(p: any): string {
 function generateCustomSVG(p: any): string {
   const { animation = 'fadeIn', speed = 'normal' } = p;
   const animStyles = getAnimationStyles(animation, p.primaryColor, speed);
+  const gradientDefs = getGradientDefs(p);
+  const bgFill = getBgFill(p);
   return `
 <svg width="${p.width}" height="${p.height}" viewBox="0 0 ${p.width} ${p.height}" xmlns="http://www.w3.org/2000/svg">
+  ${gradientDefs}
   <style>
     .custom-text{font:600 16px 'Segoe UI',Ubuntu,sans-serif;fill:${p.textColor}}
     ${animStyles}
   </style>
-  <rect width="100%" height="100%" fill="${p.bgColor}" rx="${p.borderRadius}" ${p.showBorder ? `stroke="${p.borderColor}" stroke-width="1"` : ''}/>
+  <rect width="100%" height="100%" fill="${bgFill}" rx="${p.borderRadius}" ${p.showBorder ? `stroke="${p.borderColor}" stroke-width="1"` : ''}/>
   <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" class="custom-text animate">${p.customText || 'Custom Card'}</text>
 </svg>`;
 }
@@ -345,6 +399,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     customText: req.query.customText as string,
     animation: (req.query.animation as string) || 'fadeIn',
     speed: (req.query.speed as string) || 'normal',
+    gradient: req.query.gradient === 'true',
+    gradientType: (req.query.gradientType as string) || 'linear',
+    gradientAngle: parseInt(req.query.gradientAngle as string) || 135,
+    gradientStart: decodeURIComponent((req.query.gradientStart as string) || '#667eea'),
+    gradientEnd: decodeURIComponent((req.query.gradientEnd as string) || '#764ba2'),
     stats: null as any,
     languages: [] as any[],
     streak: null as any,

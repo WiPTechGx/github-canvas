@@ -32,6 +32,11 @@ export interface CardConfig {
   height: number;
   animation: string;
   animationSpeed: string;
+  gradientEnabled: boolean;
+  gradientType: string;
+  gradientAngle: number;
+  gradientStart: string;
+  gradientEnd: string;
 }
 
 const defaultConfig: CardConfig = {
@@ -50,6 +55,11 @@ const defaultConfig: CardConfig = {
   height: 195,
   animation: "fadeIn",
   animationSpeed: "normal",
+  gradientEnabled: false,
+  gradientType: "linear",
+  gradientAngle: 135,
+  gradientStart: "#667eea",
+  gradientEnd: "#764ba2",
 };
 
 export default function Generator() {
