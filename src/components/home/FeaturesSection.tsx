@@ -4,7 +4,6 @@ import {
   Zap, 
   Share2, 
   Code2, 
-  Sparkles,
   Layout,
   Quote,
   Image
@@ -15,37 +14,49 @@ const features = [
     icon: Palette,
     title: "Custom Themes",
     description: "Choose from pre-built themes or create your own with full color customization",
-    color: "primary",
+    accent: "green" as const,
+    iconBg: "bg-primary/20",
+    iconColor: "text-primary",
   },
   {
     icon: Zap,
     title: "Instant Generation",
     description: "Generate beautiful stats cards in seconds, no authentication required",
-    color: "secondary",
+    accent: "teal" as const,
+    iconBg: "bg-secondary/20",
+    iconColor: "text-secondary",
   },
   {
     icon: Share2,
     title: "Easy Sharing",
     description: "Get markdown-ready links to embed in your README or anywhere",
-    color: "chart-3",
+    accent: "purple" as const,
+    iconBg: "bg-chart-3/20",
+    iconColor: "text-chart-3",
   },
   {
     icon: Code2,
     title: "API Access",
     description: "Full API documentation with endpoints for programmatic access",
-    color: "chart-4",
+    accent: "teal" as const,
+    iconBg: "bg-secondary/20",
+    iconColor: "text-secondary",
   },
   {
     icon: Quote,
     title: "Dev Quotes",
     description: "Random motivational quotes for developers to spice up your profile",
-    color: "chart-5",
+    accent: "purple" as const,
+    iconBg: "bg-chart-3/20",
+    iconColor: "text-chart-3",
   },
   {
     icon: Image,
     title: "Custom Images",
     description: "Generate custom images with your own text, backgrounds, and dimensions",
-    color: "primary",
+    accent: "green" as const,
+    iconBg: "bg-primary/20",
+    iconColor: "text-primary",
   },
 ];
 
@@ -70,9 +81,9 @@ export function FeaturesSection() {
           {features.map((feature, index) => {
             const Icon = feature.icon;
             return (
-              <GlassPanel key={index} hover className="group">
-                <div className={`w-14 h-14 rounded-xl bg-${feature.color}/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                  <Icon className={`w-7 h-7 text-${feature.color}`} />
+              <GlassPanel key={index} hover accent={feature.accent} className="group">
+                <div className={`w-14 h-14 rounded-xl ${feature.iconBg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform backdrop-blur-sm`}>
+                  <Icon className={`w-7 h-7 ${feature.iconColor}`} />
                 </div>
                 <h3 className="text-xl font-semibold mb-2 text-foreground">
                   {feature.title}
