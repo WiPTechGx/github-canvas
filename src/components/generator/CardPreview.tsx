@@ -35,6 +35,11 @@ export function CardPreview({ config, githubData, quote }: CardPreviewProps) {
       height: config.height.toString(),
       animation: config.animation || "fadeIn",
       speed: config.animationSpeed || "normal",
+      gradient: config.gradientEnabled ? "true" : "false",
+      gradientType: config.gradientType || "linear",
+      gradientAngle: config.gradientAngle.toString(),
+      gradientStart: config.gradientStart,
+      gradientEnd: config.gradientEnd,
     });
 
     if (config.customText) {

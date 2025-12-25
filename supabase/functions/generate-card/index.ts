@@ -22,6 +22,11 @@ interface CardParams {
   animate?: boolean;
   animation?: string;
   speed?: string;
+  gradient?: boolean;
+  gradientType?: string;
+  gradientAngle?: number;
+  gradientStart?: string;
+  gradientEnd?: string;
   stats?: {
     totalStars: number;
     publicRepos: number;
@@ -68,6 +73,11 @@ serve(async (req) => {
         animate: url.searchParams.get('animate') !== 'false',
         animation: url.searchParams.get('animation') || 'fadeIn',
         speed: url.searchParams.get('speed') || 'normal',
+        gradient: url.searchParams.get('gradient') === 'true',
+        gradientType: url.searchParams.get('gradientType') || 'linear',
+        gradientAngle: parseInt(url.searchParams.get('gradientAngle') || '135'),
+        gradientStart: decodeURIComponent(url.searchParams.get('gradientStart') || '#667eea'),
+        gradientEnd: decodeURIComponent(url.searchParams.get('gradientEnd') || '#764ba2'),
       };
       
       if (params.username && params.type !== 'quote' && params.type !== 'custom') {
@@ -154,6 +164,11 @@ function generateSVG(params: CardParams): string {
     animate = true,
     animation = 'fadeIn',
     speed = 'normal',
+    gradient = false,
+    gradientType = 'linear',
+    gradientAngle = 135,
+    gradientStart = '#667eea',
+    gradientEnd = '#764ba2',
     stats,
     languages,
     streak,
@@ -164,6 +179,38 @@ function generateSVG(params: CardParams): string {
   const borderStyle = showBorder 
     ? `stroke="${borderColor}" stroke-width="2"` 
     : '';
+
+  // Gradient helper functions
+  const getGradientDefs = (): string => {
+    if (!gradient) return '';
+    
+    const id = 'bgGradient';
+    if (gradientType === 'radial') {
+      return `
+        <defs>
+          <radialGradient id="${id}" cx="50%" cy="50%" r="70%">
+            <stop offset="0%" stop-color="${gradientStart}"/>
+            <stop offset="100%" stop-color="${gradientEnd}"/>
+          </radialGradient>
+        </defs>`;
+    }
+    
+    const angleRad = (gradientAngle - 90) * Math.PI / 180;
+    const x1 = 50 - Math.cos(angleRad) * 50;
+    const y1 = 50 - Math.sin(angleRad) * 50;
+    const x2 = 50 + Math.cos(angleRad) * 50;
+    const y2 = 50 + Math.sin(angleRad) * 50;
+    
+    return `
+      <defs>
+        <linearGradient id="${id}" x1="${x1}%" y1="${y1}%" x2="${x2}%" y2="${y2}%">
+          <stop offset="0%" stop-color="${gradientStart}"/>
+          <stop offset="100%" stop-color="${gradientEnd}"/>
+        </linearGradient>
+      </defs>`;
+  };
+
+  const getBgFill = (): string => gradient ? 'url(#bgGradient)' : bgColor;
 
   // Speed multiplier
   const getSpeedMultiplier = (s: string): number => {
@@ -246,60 +293,63 @@ function generateSVG(params: CardParams): string {
     </style>
   `;
 
+  const gradientDefs = getGradientDefs();
+  const bgFill = getBgFill();
+
   switch (type) {
     case 'stats':
       return generateStatsSVG({
-        width, height, bgColor, borderRadius, borderStyle,
+        width, height, bgColor: bgFill, borderRadius, borderStyle,
         primaryColor, secondaryColor, textColor, username, animate,
         stats: stats || { totalStars: 0, publicRepos: 0, followers: 0, totalForks: 0 },
-        commonStyles,
+        commonStyles, gradientDefs,
       });
     
     case 'languages':
       return generateLanguagesSVG({
-        width, height, bgColor, borderRadius, borderStyle,
+        width, height, bgColor: bgFill, borderRadius, borderStyle,
         primaryColor, secondaryColor, textColor, animate,
         languages: languages || [],
-        commonStyles,
+        commonStyles, gradientDefs,
       });
     
     case 'streak':
       return generateStreakSVG({
-        width, height, bgColor, borderRadius, borderStyle,
+        width, height, bgColor: bgFill, borderRadius, borderStyle,
         primaryColor, secondaryColor, textColor, animate,
         streak: streak || { current: 0, longest: 0, total: 0 },
-        commonStyles,
+        commonStyles, gradientDefs,
       });
     
     case 'activity':
       return generateActivitySVG({
-        width, height, bgColor, borderRadius, borderStyle,
+        width, height, bgColor: bgFill, borderRadius, borderStyle,
         primaryColor, secondaryColor, textColor, animate,
         activity: activity || Array(30).fill(0),
-        commonStyles,
+        commonStyles, gradientDefs,
       });
     
     case 'quote':
       return generateQuoteSVG({
-        width, height, bgColor, borderRadius, borderStyle,
+        width, height, bgColor: bgFill, borderRadius, borderStyle,
         primaryColor, secondaryColor, textColor, animate,
         quote: quote || { quote: "Code is poetry.", author: "Anonymous" },
-        commonStyles,
+        commonStyles, gradientDefs,
       });
     
     case 'custom':
       return generateCustomSVG({
-        width, height, bgColor, borderRadius, borderStyle,
+        width, height, bgColor: bgFill, borderRadius, borderStyle,
         primaryColor, textColor, customText, animate,
-        commonStyles,
+        commonStyles, gradientDefs,
       });
     
     default:
       return generateStatsSVG({
-        width, height, bgColor, borderRadius, borderStyle,
+        width, height, bgColor: bgFill, borderRadius, borderStyle,
         primaryColor, secondaryColor, textColor, username, animate,
         stats: stats || { totalStars: 0, publicRepos: 0, followers: 0, totalForks: 0 },
-        commonStyles,
+        commonStyles, gradientDefs,
       });
   }
 }
@@ -309,6 +359,7 @@ function generateStatsSVG(p: any): string {
   
   return `
 <svg width="${p.width}" height="${p.height}" viewBox="0 0 ${p.width} ${p.height}" xmlns="http://www.w3.org/2000/svg">
+  ${p.gradientDefs || ''}
   ${p.commonStyles}
   <rect x="1" y="1" width="${p.width - 2}" height="${p.height - 2}" rx="${p.borderRadius}" fill="${p.bgColor}" ${p.borderStyle}/>
   
@@ -360,6 +411,7 @@ function generateLanguagesSVG(p: any): string {
   
   return `
 <svg width="${p.width}" height="${p.height}" viewBox="0 0 ${p.width} ${p.height}" xmlns="http://www.w3.org/2000/svg">
+  ${p.gradientDefs || ''}
   ${p.commonStyles}
   <rect x="1" y="1" width="${p.width - 2}" height="${p.height - 2}" rx="${p.borderRadius}" fill="${p.bgColor}" ${p.borderStyle}/>
   <text class="title" x="25" y="35">Most Used Languages</text>
