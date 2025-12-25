@@ -32,6 +32,13 @@ export function GlassPanel({
     none: "rgba(255, 255, 255, 0.15)"
   };
 
+  const particleColors = {
+    green: "rgba(12, 247, 9, 0.6)",
+    teal: "rgba(0, 225, 255, 0.6)",
+    purple: "rgba(139, 92, 246, 0.6)",
+    none: "rgba(255, 255, 255, 0.4)"
+  };
+
   return (
     <div
       className={cn(
@@ -44,11 +51,8 @@ export function GlassPanel({
         className
       )}
       style={{
-        // Truly transparent frosty background
         background: `linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)`,
-        // Icy edge border with glow
         border: `1px solid ${accentEdgeColors[accent]}`,
-        // Drop shadow on edge + soft outer glow
         boxShadow: active 
           ? `0 0 60px -8px ${glowColors[accent]}, 
              0 4px 30px rgba(0, 0, 0, 0.3), 
@@ -63,7 +67,79 @@ export function GlassPanel({
         "--glow-color": glowColors[accent],
       } as React.CSSProperties}
     >
-      {/* Top highlight edge - frosty shine */}
+      {/* Frost particles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Particle 1 */}
+        <div 
+          className="absolute w-1 h-1 rounded-full"
+          style={{
+            background: particleColors[accent],
+            left: '15%',
+            bottom: '20%',
+            animation: 'frost-drift-1 8s ease-in-out infinite',
+            boxShadow: `0 0 4px ${particleColors[accent]}`
+          }}
+        />
+        {/* Particle 2 */}
+        <div 
+          className="absolute w-0.5 h-0.5 rounded-full"
+          style={{
+            background: particleColors[accent],
+            left: '45%',
+            bottom: '30%',
+            animation: 'frost-drift-2 10s ease-in-out infinite',
+            animationDelay: '1s',
+            boxShadow: `0 0 3px ${particleColors[accent]}`
+          }}
+        />
+        {/* Particle 3 */}
+        <div 
+          className="absolute w-1.5 h-1.5 rounded-full"
+          style={{
+            background: particleColors[accent],
+            left: '75%',
+            bottom: '15%',
+            animation: 'frost-drift-3 12s ease-in-out infinite',
+            animationDelay: '2s',
+            opacity: 0.4,
+            boxShadow: `0 0 6px ${particleColors[accent]}`
+          }}
+        />
+        {/* Particle 4 */}
+        <div 
+          className="absolute w-0.5 h-0.5 rounded-full"
+          style={{
+            background: particleColors[accent],
+            left: '30%',
+            bottom: '50%',
+            animation: 'frost-drift-1 9s ease-in-out infinite',
+            animationDelay: '3s',
+            boxShadow: `0 0 2px ${particleColors[accent]}`
+          }}
+        />
+        {/* Particle 5 */}
+        <div 
+          className="absolute w-1 h-1 rounded-full"
+          style={{
+            background: particleColors[accent],
+            left: '60%',
+            bottom: '40%',
+            animation: 'frost-drift-2 11s ease-in-out infinite',
+            animationDelay: '4s',
+            boxShadow: `0 0 4px ${particleColors[accent]}`
+          }}
+        />
+        {/* Shimmer overlay */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            background: `radial-gradient(ellipse at 50% 0%, ${particleColors[accent]}, transparent 60%)`,
+            animation: 'frost-shimmer 6s ease-in-out infinite',
+          }}
+        />
+      </div>
+
+      {/* Top highlight edge */}
       <div 
         className="absolute top-0 left-0 right-0 h-px"
         style={{
@@ -107,7 +183,7 @@ export function GlassPanel({
   );
 }
 
-// Inner frosted glass sub-panel component - truly transparent
+// Inner frosted glass sub-panel component
 export function GlassInnerPanel({ 
   children, 
   className,
