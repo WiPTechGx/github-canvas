@@ -15,17 +15,31 @@ export function LinkGenerator({ config }: LinkGeneratorProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const { toast } = useToast();
 
-  // Detect if self-hosted (Vercel) or using Lovable Cloud
-  const isVercel = !window.location.hostname.includes('lovable.app') && !window.location.hostname.includes('localhost');
+  // Determine API endpoint: prioritize VITE_API_URL if set, otherwise detect based on hostname
+  const getApiEndpoint = () => {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const selfHostedApiUrl = import.meta.env.VITE_API_URL; // Optional: set this for self-hosted deployments
+    
+    // If a custom API URL is set, use it
+    if (selfHostedApiUrl) {
+      return `${selfHostedApiUrl}`;
+    }
+    
+    // Check if running on Lovable preview or localhost (use Supabase functions)
+    const hostname = window.location.hostname;
+    const isLovableOrLocal = hostname.includes('lovable.app') || hostname.includes('localhost') || hostname.includes('127.0.0.1');
+    
+    if (isLovableOrLocal && supabaseUrl) {
+      return `${supabaseUrl}/functions/v1/generate-card`;
+    }
+    
+    // Default: assume self-hosted (Vercel, Netlify, etc.) - use same origin
+    return `${window.location.origin}/api/card`;
+  };
   
-  // Use /api/card for self-hosted, Supabase function for Lovable
-  const baseUrl = isVercel 
-    ? window.location.origin
-    : import.meta.env.VITE_SUPABASE_URL;
+  const apiEndpoint = getApiEndpoint();
   
-  const apiPath = isVercel ? '/api/card' : '/functions/v1/generate-card';
-  
-  const imageUrl = `${baseUrl}${apiPath}?type=${config.type}&username=${config.username}&theme=${config.theme}&bg=${encodeURIComponent(config.bgColor)}&primary=${encodeURIComponent(config.primaryColor)}&secondary=${encodeURIComponent(config.secondaryColor)}&text=${encodeURIComponent(config.textColor)}&border=${encodeURIComponent(config.borderColor)}&radius=${config.borderRadius}&showBorder=${config.showBorder}&width=${config.width}&height=${config.height}&animation=${config.animation || 'fadeIn'}&speed=${config.animationSpeed || 'normal'}&gradient=${config.gradientEnabled}&gradientType=${config.gradientType}&gradientAngle=${config.gradientAngle}&gradientStart=${encodeURIComponent(config.gradientStart)}&gradientEnd=${encodeURIComponent(config.gradientEnd)}${config.customText ? `&customText=${encodeURIComponent(config.customText)}` : ''}`;
+  const imageUrl = `${apiEndpoint}?type=${config.type}&username=${config.username}&theme=${config.theme}&bg=${encodeURIComponent(config.bgColor)}&primary=${encodeURIComponent(config.primaryColor)}&secondary=${encodeURIComponent(config.secondaryColor)}&text=${encodeURIComponent(config.textColor)}&border=${encodeURIComponent(config.borderColor)}&radius=${config.borderRadius}&showBorder=${config.showBorder}&width=${config.width}&height=${config.height}&animation=${config.animation || 'fadeIn'}&speed=${config.animationSpeed || 'normal'}&gradient=${config.gradientEnabled}&gradientType=${config.gradientType}&gradientAngle=${config.gradientAngle}&gradientStart=${encodeURIComponent(config.gradientStart)}&gradientEnd=${encodeURIComponent(config.gradientEnd)}${config.customText ? `&customText=${encodeURIComponent(config.customText)}` : ''}`;
   
   const markdownCode = `![${config.username || "GitHub"} Stats](${imageUrl})`;
   

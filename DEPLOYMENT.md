@@ -38,6 +38,7 @@
 |----------|----------|-------------|
 | `GITHUB_TOKEN` | Optional | GitHub Personal Access Token for higher rate limits (60 → 5000 req/hr) |
 | `VITE_APP_URL` | Auto | Set automatically by Vercel |
+| `VITE_API_URL` | Optional | Override the auto-detected API endpoint (e.g., `https://your-app.vercel.app/api/card`) |
 
 ### Getting a GitHub Token
 1. Go to [GitHub Settings → Tokens](https://github.com/settings/tokens)
@@ -54,7 +55,9 @@
 1. Go to your project on [vercel.com](https://vercel.com)
 2. Navigate to **Settings** → **Environment Variables**
 3. Add your variables:
-   - `GITHUB_TOKEN`: Your GitHub PAT (optional)
+   - `GITHUB_TOKEN`: Your GitHub PAT (optional but recommended)
+
+**Note:** The Vercel API (`/api/card`) is fully self-contained and does NOT require Supabase Edge Functions or any external dependencies. It works independently out of the box.
 
 ### Custom Domain
 
