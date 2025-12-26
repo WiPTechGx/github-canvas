@@ -380,7 +380,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end();
   }
 
-  const { type = 'stats', username = '', theme = 'github' } = req.query;
+  const { type = 'stats', username = '', theme = 'github', format = 'svg' } = req.query;
   const themeColors = themes[theme as string] || themes.github;
 
   const params = {
@@ -430,6 +430,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     case 'quote': svg = generateQuoteSVG(params); break;
     case 'custom': svg = generateCustomSVG(params); break;
     default: svg = generateStatsSVG(params);
+  }
+
+  // Return based on format
+  if (format === 'base64') {
+    // Return base64 data URL for img src usage
+    const base64 = Buffer.from(svg).toString('base64');
+    const dataUrl = `data:image/svg+xml;base64,${base64}`;
+    res.setHeader('Content-Type', 'text/plain');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    return res.status(200).send(dataUrl);
   }
 
   res.setHeader('Content-Type', 'image/svg+xml');

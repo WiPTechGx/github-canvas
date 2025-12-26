@@ -54,8 +54,11 @@ serve(async (req) => {
   try {
     let params: CardParams;
     
+    let format = 'svg';
+    
     if (req.method === 'GET') {
       const url = new URL(req.url);
+      format = url.searchParams.get('format') || 'svg';
       params = {
         type: url.searchParams.get('type') || 'stats',
         username: url.searchParams.get('username') || '',
@@ -126,9 +129,25 @@ serve(async (req) => {
       params = await req.json();
     }
 
-    console.log('Generating card:', params.type, params.username);
+    console.log('Generating card:', params.type, params.username, 'format:', format);
 
     const svg = generateSVG(params);
+
+    // Return based on format
+    if (format === 'base64') {
+      // Return base64 data URL for img src usage
+      const encoder = new TextEncoder();
+      const data = encoder.encode(svg);
+      const base64 = btoa(String.fromCharCode(...data));
+      const dataUrl = `data:image/svg+xml;base64,${base64}`;
+      return new Response(dataUrl, {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'text/plain',
+          'Cache-Control': 'public, max-age=3600',
+        },
+      });
+    }
 
     return new Response(svg, {
       headers: {
