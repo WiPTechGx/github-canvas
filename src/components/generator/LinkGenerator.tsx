@@ -15,25 +15,26 @@ export function LinkGenerator({ config }: LinkGeneratorProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const { toast } = useToast();
 
-  // Determine API endpoint: prioritize VITE_API_URL if set, otherwise detect based on hostname
+  // Determine API endpoint
   const getApiEndpoint = () => {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const selfHostedApiUrl = import.meta.env.VITE_API_URL; // Optional: set this for self-hosted deployments
+    const selfHostedApiUrl = import.meta.env.VITE_API_URL;
     
-    // If a custom API URL is set, use it
+    // If a custom API URL is explicitly set, use it
     if (selfHostedApiUrl) {
-      return `${selfHostedApiUrl}`;
+      return selfHostedApiUrl;
     }
     
-    // Check if running on Lovable preview or localhost (use Supabase functions)
     const hostname = window.location.hostname;
-    const isLovableOrLocal = hostname.includes('lovable.app') || hostname.includes('localhost') || hostname.includes('127.0.0.1');
     
-    if (isLovableOrLocal && supabaseUrl) {
-      return `${supabaseUrl}/functions/v1/generate-card`;
+    // On Lovable preview or localhost - always use Supabase edge function
+    if (hostname.includes('lovable.app') || hostname.includes('lovableproject.com') || hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
+      if (supabaseUrl) {
+        return `${supabaseUrl}/functions/v1/generate-card`;
+      }
     }
     
-    // Default: assume self-hosted (Vercel, Netlify, etc.) - use same origin
+    // Self-hosted (Vercel, Netlify, custom domain) - use /api/card route
     return `${window.location.origin}/api/card`;
   };
   

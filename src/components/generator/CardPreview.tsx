@@ -16,23 +16,27 @@ export function CardPreview({ config, githubData, quote }: CardPreviewProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Determine API endpoint: prioritize VITE_API_URL if set, otherwise detect based on hostname
+  // Determine API endpoint
   const getApiEndpoint = () => {
+    // If a custom API URL is explicitly set, use it
     if (selfHostedApiUrl) {
-      return { baseUrl: selfHostedApiUrl, apiPath: '' };
+      return selfHostedApiUrl;
     }
     
     const hostname = window.location.hostname;
-    const isLovableOrLocal = hostname.includes('lovable.app') || hostname.includes('localhost') || hostname.includes('127.0.0.1');
     
-    if (isLovableOrLocal && supabaseUrl) {
-      return { baseUrl: supabaseUrl, apiPath: '/functions/v1/generate-card' };
+    // On Lovable preview or localhost - always use Supabase edge function
+    if (hostname.includes('lovable.app') || hostname.includes('lovableproject.com') || hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
+      if (supabaseUrl) {
+        return `${supabaseUrl}/functions/v1/generate-card`;
+      }
     }
     
-    return { baseUrl: window.location.origin, apiPath: '/api/card' };
+    // Self-hosted (Vercel, Netlify, custom domain) - use /api/card route
+    return `${window.location.origin}/api/card`;
   };
   
-  const { baseUrl, apiPath } = getApiEndpoint();
+  const apiEndpoint = getApiEndpoint();
 
   // Build the base params URL
   const paramsUrl = useMemo(() => {
@@ -75,7 +79,7 @@ export function CardPreview({ config, githubData, quote }: CardPreviewProps) {
       setIsLoading(true);
       setError(null);
       
-      const fullUrl = `${baseUrl}${apiPath}?${paramsUrl}&format=base64`;
+      const fullUrl = `${apiEndpoint}?${paramsUrl}&format=base64`;
       
       try {
         const response = await fetch(fullUrl);
@@ -103,7 +107,7 @@ export function CardPreview({ config, githubData, quote }: CardPreviewProps) {
     };
 
     fetchImage();
-  }, [paramsUrl, baseUrl, apiPath]);
+  }, [paramsUrl, apiEndpoint]);
 
   // Check if we need a username
   const needsUsername = !config.username && config.type !== "quote" && config.type !== "custom";
