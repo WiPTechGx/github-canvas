@@ -37,6 +37,7 @@ export interface CardConfig {
   gradientAngle: number;
   gradientStart: string;
   gradientEnd: string;
+  previewFormat: "svg" | "img";
 }
 
 const defaultConfig: CardConfig = {
@@ -60,6 +61,7 @@ const defaultConfig: CardConfig = {
   gradientAngle: 135,
   gradientStart: "#667eea",
   gradientEnd: "#764ba2",
+  previewFormat: "img",
 };
 
 export default function Generator() {

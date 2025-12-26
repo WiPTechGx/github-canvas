@@ -1,7 +1,7 @@
 import { CardConfig } from "@/pages/Generator";
 import { GitHubStats } from "@/hooks/useGitHubStats";
 import { DevQuote } from "@/hooks/useDevQuote";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 interface CardPreviewProps {
   config: CardConfig;
@@ -11,6 +11,8 @@ interface CardPreviewProps {
 
 export function CardPreview({ config, githubData, quote }: CardPreviewProps) {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const [imageSrc, setImageSrc] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
 
   // Detect if self-hosted (Vercel) or using Lovable Cloud
   const isVercel = !window.location.hostname.includes('lovable.app') && !window.location.hostname.includes('localhost');
@@ -18,8 +20,8 @@ export function CardPreview({ config, githubData, quote }: CardPreviewProps) {
   const baseUrl = isVercel ? window.location.origin : supabaseUrl;
   const apiPath = isVercel ? '/api/card' : '/functions/v1/generate-card';
 
-  // Build the image URL
-  const imageUrl = useMemo(() => {
+  // Build the base params URL
+  const paramsUrl = useMemo(() => {
     const params = new URLSearchParams({
       type: config.type,
       username: config.username || "",
@@ -51,8 +53,37 @@ export function CardPreview({ config, githubData, quote }: CardPreviewProps) {
       params.set("t", Date.now().toString());
     }
 
-    return `${baseUrl}${apiPath}?${params.toString()}`;
-  }, [config, baseUrl, apiPath, quote]);
+    return params.toString();
+  }, [config, quote]);
+
+  // Fetch base64 for img format, or use direct URL for svg format
+  useEffect(() => {
+    const fetchImage = async () => {
+      if (config.previewFormat === "img") {
+        setIsLoading(true);
+        try {
+          const response = await fetch(`${baseUrl}${apiPath}?${paramsUrl}&format=base64`);
+          if (response.ok) {
+            const dataUrl = await response.text();
+            setImageSrc(dataUrl);
+          } else {
+            // Fallback to SVG URL if base64 fails
+            setImageSrc(`${baseUrl}${apiPath}?${paramsUrl}`);
+          }
+        } catch {
+          // Fallback to SVG URL on error
+          setImageSrc(`${baseUrl}${apiPath}?${paramsUrl}`);
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        // SVG format - use direct URL
+        setImageSrc(`${baseUrl}${apiPath}?${paramsUrl}`);
+      }
+    };
+
+    fetchImage();
+  }, [config.previewFormat, paramsUrl, baseUrl, apiPath]);
 
   // Check if we need a username
   const needsUsername = !config.username && config.type !== "quote" && config.type !== "custom";
@@ -70,12 +101,19 @@ export function CardPreview({ config, githubData, quote }: CardPreviewProps) {
 
   return (
     <div className="flex justify-center items-center min-h-[200px]">
-      <img 
-        src={imageUrl}
-        alt={`${config.type} card preview`}
-        style={{ maxWidth: `${config.width}px` }}
-        className="max-w-full h-auto rounded-lg"
-      />
+      {isLoading ? (
+        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+          <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+          <span className="text-sm">Loading preview...</span>
+        </div>
+      ) : (
+        <img 
+          src={imageSrc}
+          alt={`${config.type} card preview`}
+          style={{ maxWidth: `${config.width}px` }}
+          className="max-w-full h-auto rounded-lg"
+        />
+      )}
     </div>
   );
 }

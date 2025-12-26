@@ -79,6 +79,7 @@ https://your-app.vercel.app/api/card?type=stats&username=YOUR_USERNAME
 | `type` | `stats` | Card type: `stats`, `languages`, `streak`, `activity`, `quote`, `custom` |
 | `username` | - | GitHub username |
 | `theme` | `neon` | Color theme |
+| `format` | `svg` | Output format: `svg` (default for embeds), `base64` (returns data URL) |
 | `animation` | `fadeIn` | Animation: `fadeIn`, `scaleIn`, `wave`, `glow`, `blink`, `typing`, `slideInLeft`, `slideInRight`, `slideInUp`, `bounce` |
 | `speed` | `normal` | Animation speed: `slow`, `normal`, `fast` |
 | `gradient` | `false` | Enable gradient background |
