@@ -243,6 +243,7 @@ function generateStatsSVG(p: any): string {
       <text class="stat-label" y="22">Total Forks</text>
     </g>
   </g>
+</svg>`;
 }
 
 function generateLanguagesSVG(p: any): string {
