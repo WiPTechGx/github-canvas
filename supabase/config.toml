@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.setpp]
 verify_jwt = false
+
+[functions.generate-batch-quotes]
+verify_jwt = false
