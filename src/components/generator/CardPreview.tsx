@@ -11,14 +11,30 @@ interface CardPreviewProps {
 
 export function CardPreview({ config, githubData, quote }: CardPreviewProps) {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const selfHostedApiUrl = import.meta.env.VITE_API_URL; // Optional: set this for self-hosted deployments
   const [imageSrc, setImageSrc] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Detect if self-hosted (Vercel) or using Lovable Cloud
-  const isVercel = !window.location.hostname.includes('lovable.app') && !window.location.hostname.includes('localhost');
+  // Determine API endpoint: prioritize VITE_API_URL if set, otherwise detect based on hostname
+  const getApiEndpoint = () => {
+    // If a custom API URL is set, use it
+    if (selfHostedApiUrl) {
+      return { baseUrl: selfHostedApiUrl, apiPath: '' };
+    }
+    
+    // Check if running on Lovable preview or localhost (use Supabase functions)
+    const hostname = window.location.hostname;
+    const isLovableOrLocal = hostname.includes('lovable.app') || hostname.includes('localhost') || hostname.includes('127.0.0.1');
+    
+    if (isLovableOrLocal && supabaseUrl) {
+      return { baseUrl: supabaseUrl, apiPath: '/functions/v1/generate-card' };
+    }
+    
+    // Default: assume self-hosted (Vercel, Netlify, etc.) - use same origin
+    return { baseUrl: window.location.origin, apiPath: '/api/card' };
+  };
   
-  const baseUrl = isVercel ? window.location.origin : supabaseUrl;
-  const apiPath = isVercel ? '/api/card' : '/functions/v1/generate-card';
+  const { baseUrl, apiPath } = getApiEndpoint();
 
   // Build the base params URL
   const paramsUrl = useMemo(() => {
