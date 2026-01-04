@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { ReactNode } from "react";
+import { ReactNode, useRef, useState } from "react";
 
 interface GlassPanelProps {
   children: ReactNode;
@@ -18,6 +18,27 @@ export function GlassPanel({
   accent = "none",
   active = false
 }: GlassPanelProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [opacity, setOpacity] = useState(0);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!panelRef.current || !hover) return;
+
+    const div = panelRef.current;
+    const rect = div.getBoundingClientRect();
+
+    setPosition({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  };
+
+  const handleMouseEnter = () => {
+    if (hover) setOpacity(1);
+  };
+
+  const handleMouseLeave = () => {
+    if (hover) setOpacity(0);
+  };
+
   const glowColors = {
     green: "hsl(var(--primary))",
     teal: "hsl(var(--secondary))",
@@ -41,6 +62,10 @@ export function GlassPanel({
 
   return (
     <div
+      ref={panelRef}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       className={cn(
         "relative overflow-hidden rounded-2xl p-6 transition-all duration-500",
         "backdrop-blur-2xl group",
@@ -63,16 +88,19 @@ export function GlassPanel({
              0 0 0 1px rgba(255, 255, 255, 0.03),
              inset 0 1px 0 rgba(255, 255, 255, 0.08),
              inset 0 -1px 0 rgba(0, 0, 0, 0.05)`,
-        // @ts-ignore
+        // @ts-expect-error -- CSS custom properties are not typed in React.CSSProperties
         "--glow-color": glowColors[accent],
+        "--mouse-x": `${position.x}px`,
+        "--mouse-y": `${position.y}px`,
       } as React.CSSProperties}
     >
-      {/* Interactive hover gradient that follows cursor - approximated with large radial gradient on hover */}
+      {/* Interactive hover gradient that follows cursor */}
       {hover && (
         <div
-          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+          className="absolute inset-0 transition-opacity duration-500 pointer-events-none"
           style={{
-            background: `radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), ${particleColors[accent].replace('0.6', '0.1')}, transparent 40%)`
+            opacity,
+            background: `radial-gradient(600px circle at var(--mouse-x) var(--mouse-y), ${particleColors[accent].replace('0.6', '0.15')}, transparent 40%)`
           }}
         />
       )}
