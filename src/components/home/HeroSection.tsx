@@ -1,4 +1,6 @@
 import { Button } from "@/components/ui/button";
+import { MagneticButton } from "@/components/ui/MagneticButton";
+import { SpotlightGrid } from "@/components/ui/SpotlightGrid";
 import { ArrowRight, Sparkles, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { GlassPanel, GlassInnerPanel } from "@/components/ui/GlassPanel";
@@ -8,7 +10,7 @@ export function HeroSection() {
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
       {/* Background grid */}
-      <div className="absolute inset-0 grid-bg opacity-30" />
+      <SpotlightGrid opacity={0.15} spotlightRadius={400} />
 
       {/* Gradient orbs */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[120px] animate-pulse-glow" />
@@ -39,7 +41,7 @@ export function HeroSection() {
 
           {/* CTA buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-            <Button asChild size="lg" variant="premium" className="group px-8">
+            <MagneticButton asChild size="lg" variant="premium" className="group px-8" strength={0.3}>
               <Link to="/generator">
                 {/* Manual overlay for asChild usage since Button component can't inject into Slot */}
                 <span className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
@@ -49,12 +51,12 @@ export function HeroSection() {
                 <span className="relative z-10">Start Creating</span>
                 <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform relative z-10" />
               </Link>
-            </Button>
-            <Button asChild variant="outline" size="lg" className="px-8 hover:bg-white/5 transition-colors border-primary/20 hover:border-primary/50">
+            </MagneticButton>
+            <MagneticButton asChild variant="outline" size="lg" className="px-8 hover:bg-white/5 transition-colors border-primary/20 hover:border-primary/50" strength={0.2}>
               <Link to="/docs">
                 View API Docs
               </Link>
-            </Button>
+            </MagneticButton>
           </div>
 
           {/* Stats preview cards with glassmorphism */}
