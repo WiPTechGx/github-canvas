@@ -15,6 +15,7 @@ import { useGitHubStats, GitHubStats } from "@/hooks/useGitHubStats";
 import { useDevQuote, DevQuote } from "@/hooks/useDevQuote";
 import { useQuoteOfTheDay } from "@/hooks/useQuoteOfTheDay";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import confetti from "canvas-confetti";
 
 export type CardType = "stats" | "languages" | "streak" | "activity" | "quote" | "custom" | "banner" | "contribution";
 
@@ -108,6 +109,15 @@ export default function Generator() {
 
   const isGenerating = statsLoading || quoteLoading;
 
+  const triggerConfetti = () => {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#0CF709', '#00e1ff', '#667eea'],
+    });
+  };
+
   const handleGenerate = async () => {
     if (!config.username && config.type !== "quote" && config.type !== "custom") {
       toast({
@@ -123,6 +133,7 @@ export default function Generator() {
       const quote = await generateQuote(topic);
       if (quote) {
         setCurrentQuote(quote);
+        triggerConfetti();
         toast({
           title: "Quote generated!",
           description: "A unique dev quote has been created.",
@@ -143,6 +154,7 @@ export default function Generator() {
 
     if (result) {
       setGithubData(result);
+      triggerConfetti();
       toast({
         title: "Stats fetched!",
         description: `Successfully fetched data for ${config.username}`,
@@ -185,6 +197,7 @@ export default function Generator() {
     const quote = await generateQuote(topic);
     if (quote) {
       setCurrentQuote(quote);
+      triggerConfetti(); // Also trigger confetti on manual refresh
     }
   };
 
