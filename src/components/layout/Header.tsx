@@ -1,7 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Github, FileCode, BookOpen, Sparkles } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useState, useEffect } from "react";
 
 const navItems = [
   { href: "/", label: "Home", icon: Sparkles },
@@ -11,9 +12,48 @@ const navItems = [
 
 export function Header() {
   const location = useLocation();
+  const { scrollY } = useScroll();
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    return scrollY.onChange((latest) => {
+      setIsScrolled(latest > 50);
+    });
+  }, [scrollY]);
+
+  const headerBackground = useTransform(
+    scrollY,
+    [0, 50],
+    ["rgba(var(--background), 0.6)", "rgba(var(--background), 0.8)"]
+  );
+
+  const headerBlur = useTransform(
+    scrollY,
+    [0, 50],
+    ["blur(8px)", "blur(16px)"]
+  );
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-background/60 border-b border-white/5 shadow-sm transition-all duration-300 animate-in slide-in-from-top-4 fade-in">
+    <motion.header
+      className={cn(
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b",
+        isScrolled ? "border-white/10 shadow-lg shadow-primary/5" : "border-transparent shadow-none"
+      )}
+      style={{
+        backgroundColor: headerBackground,
+        backdropFilter: headerBlur,
+        WebkitBackdropFilter: headerBlur,
+      }}
+      initial={{ y: -100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+    >
+      {/* Animated bottom gradient line */}
+      <div className={cn(
+        "absolute bottom-0 left-0 h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent transition-all duration-500",
+        isScrolled ? "w-full opacity-100" : "w-0 opacity-0 left-1/2 -translate-x-1/2"
+      )} />
+
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3 group relative z-10">
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20 group-hover:border-primary/50 group-hover:shadow-[0_0_15px_rgba(12,247,9,0.3)] transition-all duration-300">
@@ -49,6 +89,6 @@ export function Header() {
           })}
         </nav>
       </div>
-    </header>
+    </motion.header>
   );
 }

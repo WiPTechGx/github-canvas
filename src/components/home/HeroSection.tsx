@@ -1,46 +1,146 @@
-import { Button } from "@/components/ui/button";
 import { MagneticButton } from "@/components/ui/MagneticButton";
 import { SpotlightGrid } from "@/components/ui/SpotlightGrid";
 import { ArrowRight, Sparkles, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { GlassPanel, GlassInnerPanel } from "@/components/ui/GlassPanel";
 import { TiltCard } from "@/components/ui/TiltCard";
+import { motion, useSpring, useMotionValue, useTransform } from "framer-motion";
+import { useEffect } from "react";
 
 export function HeroSection() {
+  // Mouse follow effect for orbs
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  // Smooth spring animation for mouse following
+  const springConfig = { damping: 25, stiffness: 150 };
+  const springX = useSpring(mouseX, springConfig);
+  const springY = useSpring(mouseY, springConfig);
+
+  // Inverted spring for the second orb
+  const springX2 = useSpring(mouseX, { ...springConfig, damping: 35 });
+  const springY2 = useSpring(mouseY, { ...springConfig, damping: 35 });
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const { clientX, clientY } = e;
+      const { innerWidth, innerHeight } = window;
+
+      // Calculate normalized position (-1 to 1)
+      const x = (clientX - innerWidth / 2) / (innerWidth / 2);
+      const y = (clientY - innerHeight / 2) / (innerHeight / 2);
+
+      // Update motion values
+      mouseX.set(x * 50); // Move up to 50px
+      mouseY.set(y * 50);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, [mouseX, mouseY]);
+
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
       {/* Background grid */}
       <SpotlightGrid opacity={0.15} spotlightRadius={400} />
 
-      {/* Gradient orbs */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[120px] animate-pulse-glow" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/20 rounded-full blur-[120px] animate-pulse-glow" style={{ animationDelay: "1s" }} />
+      {/* Interactive Gradient Orbs */}
+      <motion.div
+        className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[120px]"
+        style={{
+          x: springX,
+          y: springY,
+          opacity: 0.6
+        }}
+        animate={{
+          scale: [1, 1.1, 1],
+        }}
+        transition={{
+          duration: 8,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+      />
+
+      <motion.div
+        className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/20 rounded-full blur-[120px]"
+        style={{
+          x: useTransform(springX2, (val) => -val), // Invert movement
+          y: useTransform(springY2, (val) => -val),
+          opacity: 0.6
+        }}
+        animate={{
+          scale: [1.1, 1, 1.1],
+        }}
+        transition={{
+          duration: 10,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 1
+        }}
+      />
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/30 bg-primary/10 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/30 bg-primary/10 mb-8 backdrop-blur-sm"
+          >
             <Sparkles className="w-4 h-4 text-primary animate-pulse" />
             <span className="text-sm font-medium text-primary">Visualize Your GitHub Journey</span>
-          </div>
+          </motion.div>
 
           {/* Main heading */}
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-100">
-            <span className="text-foreground">Beautiful </span>
-            <span className="gradient-text text-glow-primary">GitHub Stats</span>
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+            <motion.span
+              className="text-foreground inline-block"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
+            >
+              Beautiful{" "}
+            </motion.span>
+            <motion.span
+              className="gradient-text text-glow-primary inline-block"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.2, type: "spring" }}
+            >
+              GitHub Stats
+            </motion.span>
             <br />
-            <span className="text-foreground">For Your README</span>
+            <motion.span
+              className="text-foreground inline-block"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+            >
+              For Your README
+            </motion.span>
           </h1>
 
           {/* Subtitle */}
-          <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
+          <motion.p
+            className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
+          >
             Generate stunning, customizable GitHub statistics cards.
             Choose from templates or create your own design.
             No authentication required.
-          </p>
+          </motion.p>
 
           {/* CTA buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+          <motion.div
+            className="flex flex-col sm:flex-row items-center justify-center gap-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5, ease: "easeOut" }}
+          >
             <MagneticButton asChild size="lg" variant="premium" className="group px-8" strength={0.3}>
               <Link to="/generator">
                 {/* Manual overlay for asChild usage since Button component can't inject into Slot */}
@@ -57,10 +157,15 @@ export function HeroSection() {
                 View API Docs
               </Link>
             </MagneticButton>
-          </div>
+          </motion.div>
 
           {/* Stats preview cards with glassmorphism */}
-          <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-500">
+          <motion.div
+            className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.7, ease: "easeOut" }}
+          >
             {/* User Stats Card - Green accent */}
             <TiltCard className="h-full">
               <GlassPanel hover accent="green" className="text-left h-full flex flex-col justify-between">
@@ -120,7 +225,7 @@ export function HeroSection() {
                 </div>
               </GlassPanel>
             </TiltCard>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>
