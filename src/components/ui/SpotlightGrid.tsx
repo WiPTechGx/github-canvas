@@ -6,6 +6,7 @@ interface SpotlightGridProps extends React.HTMLAttributes<HTMLDivElement> {
   spotlightRadius?: number; // Radius of spotlight (default: 300)
   opacity?: number; // Opacity of the grid lines (default: 0.1)
   spotlightColor?: string; // Color of spotlight (default: white)
+  gridColor?: string; // RGB tuple for grid lines (default: "255, 255, 255")
 }
 
 export function SpotlightGrid({
@@ -14,6 +15,7 @@ export function SpotlightGrid({
   spotlightRadius = 300,
   opacity = 0.1,
   spotlightColor = "white",
+  gridColor = "255, 255, 255",
   ...props
 }: SpotlightGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -55,11 +57,11 @@ export function SpotlightGrid({
       {...props}
     >
       <div
-        className="absolute inset-0"
+        className="absolute inset-0 transition-opacity duration-300"
         style={{
             backgroundImage: `
-              linear-gradient(to right, rgba(255, 255, 255, ${opacity}) 1px, transparent 1px),
-              linear-gradient(to bottom, rgba(255, 255, 255, ${opacity}) 1px, transparent 1px)
+              linear-gradient(to right, rgba(${gridColor}, ${opacity}) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(${gridColor}, ${opacity}) 1px, transparent 1px)
             `,
             backgroundSize: `${gridSize}px ${gridSize}px`,
             maskImage: `radial-gradient(circle ${spotlightRadius}px at ${position.x}px ${position.y}px, black, transparent)`,
@@ -72,8 +74,8 @@ export function SpotlightGrid({
         className="absolute inset-0"
         style={{
             backgroundImage: `
-              linear-gradient(to right, rgba(255, 255, 255, ${opacity * 0.3}) 1px, transparent 1px),
-              linear-gradient(to bottom, rgba(255, 255, 255, ${opacity * 0.3}) 1px, transparent 1px)
+              linear-gradient(to right, rgba(${gridColor}, ${opacity * 0.3}) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(${gridColor}, ${opacity * 0.3}) 1px, transparent 1px)
             `,
             backgroundSize: `${gridSize}px ${gridSize}px`,
         }}
