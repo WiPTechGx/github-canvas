@@ -1,8 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Github, FileCode, BookOpen, Sparkles } from "lucide-react";
+import { Github, FileCode, BookOpen, Sparkles, Search } from "lucide-react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useState, useEffect } from "react";
+import { useCommandMenu } from "./command-menu-context";
 
 const navItems = [
   { href: "/", label: "Home", icon: Sparkles },
@@ -12,6 +13,7 @@ const navItems = [
 
 export function Header() {
   const location = useLocation();
+  const { setOpen } = useCommandMenu();
   const { scrollY } = useScroll();
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -62,32 +64,45 @@ export function Header() {
           <span className="font-bold text-lg bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70 group-hover:from-primary group-hover:to-secondary transition-all duration-300">GitStats</span>
         </Link>
 
-        <nav className="flex items-center gap-1 p-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.href;
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                to={item.href}
-                className={cn(
-                  "relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors z-10",
-                  isActive ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {isActive && (
-                  <motion.div
-                    layoutId="nav-pill"
-                    className="absolute inset-0 bg-primary rounded-full z-[-1]"
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                  />
-                )}
-                <Icon className="w-4 h-4" />
-                <span className="hidden sm:inline">{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
+        <div className="flex items-center gap-4">
+          <nav className="flex items-center gap-1 p-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.href;
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  className={cn(
+                    "relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors z-10",
+                    isActive ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="nav-pill"
+                      className="absolute inset-0 bg-primary rounded-full z-[-1]"
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    />
+                  )}
+                  <Icon className="w-4 h-4" />
+                  <span className="hidden sm:inline">{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+
+          <button
+            onClick={() => setOpen(true)}
+            className="hidden md:flex items-center gap-2 px-3 py-2 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-foreground text-sm transition-all duration-300 hover:border-primary/30 group"
+          >
+            <Search className="w-4 h-4 group-hover:text-primary transition-colors" />
+            <span className="text-xs">Search...</span>
+            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] font-medium opacity-100">
+              <span className="text-xs">⌘</span>K
+            </kbd>
+          </button>
+        </div>
       </div>
     </motion.header>
   );
