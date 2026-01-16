@@ -9,7 +9,7 @@ import { CardPreview } from "@/components/generator/CardPreview";
 import { templates } from "@/components/generator/TemplateGallery";
 import { CustomizationPanel } from "@/components/generator/CustomizationPanel";
 import { LinkGenerator } from "@/components/generator/LinkGenerator";
-import { Search, Sparkles, RefreshCw } from "lucide-react";
+import { Search, Sparkles, RefreshCw, Wand2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGitHubStats, GitHubStats } from "@/hooks/useGitHubStats";
 import { useDevQuote, DevQuote } from "@/hooks/useDevQuote";
@@ -205,6 +205,48 @@ export default function Generator() {
     setConfig((prev) => ({ ...prev, ...updates }));
   };
 
+  const handleMagicTheme = () => {
+    // 1. Pick a random template
+    const randomTemplate = templates[Math.floor(Math.random() * templates.length)];
+
+    // 2. Decide if we want gradients (70% chance)
+    const enableGradient = Math.random() > 0.3;
+
+    // 3. Setup gradient colors based on template
+    // We can swap primary/secondary or use them as is for gradients
+    const gradientStart = Math.random() > 0.5 ? randomTemplate.colors.primary : randomTemplate.colors.secondary;
+    const gradientEnd = Math.random() > 0.5 ? randomTemplate.colors.secondary : randomTemplate.colors.primary;
+
+    // 4. Random angle
+    const angle = Math.floor(Math.random() * 360);
+
+    setConfig(prev => ({
+      ...prev,
+      theme: randomTemplate.id,
+      gradientEnabled: enableGradient,
+      gradientAngle: angle,
+      gradientStart: gradientStart,
+      gradientEnd: gradientEnd,
+      // Also potentially randomize animation
+      animation: Math.random() > 0.5 ? "fadeIn" : (Math.random() > 0.5 ? "slideIn" : "scaleIn"),
+    }));
+
+    // 5. Celebrate!
+    confetti({
+      particleCount: 150,
+      spread: 100,
+      origin: { y: 0.6 },
+      colors: [randomTemplate.colors.primary, randomTemplate.colors.secondary, '#ffffff'],
+      ticks: 200,
+    });
+
+    toast({
+      title: "✨ Magic Theme Applied!",
+      description: `Switched to ${randomTemplate.name} with ${enableGradient ? 'gradient' : 'flat'} style.`,
+      className: "border-primary/50 text-foreground bg-background/80 backdrop-blur-xl",
+    });
+  };
+
   return (
     <Layout>
       <div className="min-h-screen py-12">
@@ -333,9 +375,18 @@ export default function Generator() {
 
               {/* Template Gallery */}
               <GlassPanel accent="purple">
-                <Label className="text-lg font-semibold mb-4 block">
-                  Choose a Template
-                </Label>
+                <div className="flex items-center justify-between mb-4">
+                  <Label className="text-lg font-semibold">Choose a Template</Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleMagicTheme}
+                    className="bg-primary/10 border-primary/20 hover:bg-primary/20 text-primary hover:text-primary transition-all duration-300 hover:scale-105 active:scale-95 group"
+                  >
+                    <Wand2 className="w-4 h-4 mr-2 group-hover:rotate-12 transition-transform" />
+                    Magic Theme
+                  </Button>
+                </div>
                 <Select
                   value={config.theme}
                   onValueChange={(v) => updateConfig({ theme: v })}

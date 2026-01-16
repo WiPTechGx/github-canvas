@@ -5,10 +5,47 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Copy, Check, Image, Code, FileText, Twitter, Linkedin, Download, Link2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface LinkGeneratorProps {
   config: CardConfig;
 }
+
+interface CopyButtonProps {
+  text: string;
+  tab: string;
+  copiedTab: string | null;
+  onCopy: (text: string, tab: string) => void;
+}
+
+const CopyButton = ({ text, tab, copiedTab, onCopy }: CopyButtonProps) => (
+  <Button
+    variant="outline"
+    size="sm"
+    onClick={() => onCopy(text, tab)}
+    className={cn(
+      "shrink-0 bg-background/30 backdrop-blur-sm border-border/30 transition-all duration-300 relative overflow-hidden",
+      copiedTab === tab
+        ? "bg-primary/20 border-primary/50 text-primary scale-105"
+        : "hover:bg-background/50 hover:scale-105"
+    )}
+  >
+    <div className="relative w-4 h-4">
+      <Check
+        className={cn(
+          "w-4 h-4 absolute inset-0 transition-all duration-300",
+          copiedTab === tab ? "opacity-100 rotate-0 scale-100" : "opacity-0 rotate-90 scale-0"
+        )}
+      />
+      <Copy
+        className={cn(
+          "w-4 h-4 absolute inset-0 transition-all duration-300",
+          copiedTab === tab ? "opacity-0 -rotate-90 scale-0" : "opacity-100 rotate-0 scale-100"
+        )}
+      />
+    </div>
+  </Button>
+);
 
 export function LinkGenerator({ config }: LinkGeneratorProps) {
   const [copiedTab, setCopiedTab] = useState<string | null>(null);
@@ -179,21 +216,6 @@ export function LinkGenerator({ config }: LinkGeneratorProps) {
     window.open(linkedinUrl, '_blank', 'width=600,height=400');
   };
 
-  const CopyButton = ({ text, tab }: { text: string; tab: string }) => (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={() => copyToClipboard(text, tab)}
-      className="shrink-0 bg-background/30 backdrop-blur-sm border-border/30"
-    >
-      {copiedTab === tab ? (
-        <Check className="w-4 h-4 text-primary" />
-      ) : (
-        <Copy className="w-4 h-4" />
-      )}
-    </Button>
-  );
-
   return (
     <div className="relative rounded-lg overflow-hidden">
       {/* Inner frosted glass panel */}
@@ -204,20 +226,29 @@ export function LinkGenerator({ config }: LinkGeneratorProps) {
           {config.type === "quote" && (
             <Button
               onClick={() => copyToClipboard(imageUrl, "quoteUrl")}
-              className="w-full bg-primary/20 hover:bg-primary/30 border border-primary/30"
+              className={cn(
+                "w-full transition-all duration-300 border",
+                copiedTab === "quoteUrl"
+                  ? "bg-primary/20 hover:bg-primary/30 border-primary/50 text-primary"
+                  : "bg-primary/20 hover:bg-primary/30 border-primary/30"
+              )}
               variant="outline"
             >
-              {copiedTab === "quoteUrl" ? (
-                <>
-                  <Check className="w-4 h-4 mr-2 text-primary" />
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <Link2 className="w-4 h-4 mr-2" />
-                  Copy Quote Card URL
-                </>
-              )}
+              <div className="relative w-4 h-4 mr-2">
+                 <Check
+                  className={cn(
+                    "w-4 h-4 absolute inset-0 transition-all duration-300",
+                    copiedTab === "quoteUrl" ? "opacity-100 rotate-0 scale-100" : "opacity-0 rotate-90 scale-0"
+                  )}
+                />
+                <Link2
+                  className={cn(
+                    "w-4 h-4 absolute inset-0 transition-all duration-300",
+                    copiedTab === "quoteUrl" ? "opacity-0 -rotate-90 scale-0" : "opacity-100 rotate-0 scale-100"
+                  )}
+                />
+              </div>
+              {copiedTab === "quoteUrl" ? "Copied!" : "Copy Quote Card URL"}
             </Button>
           )}
 
@@ -283,7 +314,7 @@ export function LinkGenerator({ config }: LinkGeneratorProps) {
                   readOnly
                   className="font-mono text-xs bg-background/30 backdrop-blur-sm border-border/30"
                 />
-                <CopyButton text={imageUrl} tab="image" />
+                <CopyButton text={imageUrl} tab="image" copiedTab={copiedTab} onCopy={copyToClipboard} />
               </div>
               <p className="text-xs text-muted-foreground mt-2 opacity-70">
                 Direct link to your SVG stats image — works in READMEs!
@@ -297,7 +328,7 @@ export function LinkGenerator({ config }: LinkGeneratorProps) {
                   readOnly
                   className="font-mono text-xs bg-background/30 backdrop-blur-sm border-border/30"
                 />
-                <CopyButton text={markdownCode} tab="markdown" />
+                <CopyButton text={markdownCode} tab="markdown" copiedTab={copiedTab} onCopy={copyToClipboard} />
               </div>
               <p className="text-xs text-muted-foreground mt-2 opacity-70">
                 Paste this in your README.md file
@@ -311,7 +342,7 @@ export function LinkGenerator({ config }: LinkGeneratorProps) {
                   readOnly
                   className="font-mono text-xs bg-background/30 backdrop-blur-sm border-border/30"
                 />
-                <CopyButton text={htmlCode} tab="html" />
+                <CopyButton text={htmlCode} tab="html" copiedTab={copiedTab} onCopy={copyToClipboard} />
               </div>
               <p className="text-xs text-muted-foreground mt-2 opacity-70">
                 Use this in your website or blog
