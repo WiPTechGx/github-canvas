@@ -86,6 +86,17 @@ export function MagneticButton({
       }}
       {...props}
     >
+      {/* Shine effect */}
+      {isHovered && (
+        <div
+          className="absolute inset-0 animate-shimmer pointer-events-none"
+          style={{
+            backgroundImage: "linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)",
+            backgroundSize: "200% 100%"
+          }}
+        />
+      )}
+
       {/* Internal spotlight effect */}
       {shimmer && isHovered && (
         <div

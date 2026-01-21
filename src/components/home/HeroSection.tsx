@@ -6,6 +6,7 @@ import { GlassPanel, GlassInnerPanel } from "@/components/ui/GlassPanel";
 import { TiltCard } from "@/components/ui/TiltCard";
 import { motion, useSpring, useMotionValue, useTransform } from "framer-motion";
 import { useEffect } from "react";
+import { Particles } from "@/components/ui/Particles";
 
 export function HeroSection() {
   // Mouse follow effect for orbs
@@ -41,8 +42,22 @@ export function HeroSection() {
 
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+      {/* Background Particles */}
+      <Particles
+        className="absolute inset-0 z-0 opacity-40"
+        quantity={60}
+        staticity={30}
+        ease={70}
+        color="#ffffff"
+        refresh
+      />
+
       {/* Background grid */}
-      <SpotlightGrid opacity={0.15} spotlightRadius={400} />
+      <SpotlightGrid
+        opacity={0.15}
+        spotlightRadius={400}
+        gridColor="100, 255, 100"
+      />
 
       {/* Interactive Gradient Orbs */}
       <motion.div
@@ -168,7 +183,7 @@ export function HeroSection() {
           >
             {/* User Stats Card - Green accent */}
             <TiltCard className="h-full">
-              <GlassPanel hover accent="green" className="text-left h-full flex flex-col justify-between">
+              <GlassPanel hover accent="green" className="text-left h-full flex flex-col justify-between animate-float delay-0">
                 <div>
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center backdrop-blur-sm shadow-[0_0_15px_rgba(var(--primary),0.3)]">
@@ -188,7 +203,7 @@ export function HeroSection() {
 
             {/* Streak Tracker Card - Teal accent (active/highlighted) */}
             <TiltCard className="h-full translate-y-[-10px] md:translate-y-[-20px] z-10">
-              <GlassPanel hover accent="teal" active className="text-left h-full flex flex-col justify-between animate-float">
+              <GlassPanel hover accent="teal" active className="text-left h-full flex flex-col justify-between animate-float delay-1000">
                 <div>
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-12 h-12 rounded-lg bg-secondary/20 flex items-center justify-center backdrop-blur-sm shadow-[0_0_15px_rgba(var(--secondary),0.3)]">
@@ -208,7 +223,7 @@ export function HeroSection() {
 
             {/* Languages Card - Purple accent */}
             <TiltCard className="h-full">
-              <GlassPanel hover accent="purple" className="text-left h-full flex flex-col justify-between">
+              <GlassPanel hover accent="purple" className="text-left h-full flex flex-col justify-between animate-float delay-500">
                 <div>
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-12 h-12 rounded-lg bg-chart-3/20 flex items-center justify-center backdrop-blur-sm shadow-[0_0_15px_rgba(139,92,246,0.3)]">
