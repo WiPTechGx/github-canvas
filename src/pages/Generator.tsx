@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { CardPreview } from "@/components/generator/CardPreview";
-import { templates } from "@/components/generator/TemplateGallery";
+import { ThemeSelector } from "@/components/generator/ThemeSelector";
+import { templates } from "@/lib/templates";
 import { CustomizationPanel } from "@/components/generator/CustomizationPanel";
 import { LinkGenerator } from "@/components/generator/LinkGenerator";
-import { Search, Sparkles, RefreshCw, Wand2 } from "lucide-react";
+import { Search, Sparkles, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGitHubStats, GitHubStats } from "@/hooks/useGitHubStats";
 import { useDevQuote, DevQuote } from "@/hooks/useDevQuote";
@@ -375,45 +376,11 @@ export default function Generator() {
 
               {/* Template Gallery */}
               <GlassPanel accent="purple">
-                <div className="flex items-center justify-between mb-4">
-                  <Label className="text-lg font-semibold">Choose a Template</Label>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleMagicTheme}
-                    className="bg-primary/10 border-primary/20 hover:bg-primary/20 text-primary hover:text-primary transition-all duration-300 hover:scale-105 active:scale-95 group"
-                  >
-                    <Wand2 className="w-4 h-4 mr-2 group-hover:rotate-12 transition-transform" />
-                    Magic Theme
-                  </Button>
-                </div>
-                <Select
-                  value={config.theme}
-                  onValueChange={(v) => updateConfig({ theme: v })}
-                >
-                  <SelectTrigger className="w-full h-12 bg-background/30 backdrop-blur-sm border-border/30">
-                    <SelectValue placeholder="Select a theme" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
-                    {templates.map((t) => (
-                      <SelectItem key={t.id} value={t.id} className="cursor-pointer">
-                        <div className="flex items-center gap-3">
-                          <div className="flex gap-1">
-                            <div
-                              className="w-3 h-3 rounded-full shadow-sm"
-                              style={{ backgroundColor: t.colors.primary }}
-                            />
-                            <div
-                              className="w-3 h-3 rounded-full shadow-sm"
-                              style={{ backgroundColor: t.colors.secondary }}
-                            />
-                          </div>
-                          <span className="font-medium">{t.name}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <ThemeSelector
+                  selectedTheme={config.theme}
+                  onSelectTheme={(t) => updateConfig({ theme: t })}
+                  onMagicTheme={handleMagicTheme}
+                />
               </GlassPanel>
 
               {/* Customization Panel */}
