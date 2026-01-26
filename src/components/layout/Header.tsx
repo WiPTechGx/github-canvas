@@ -26,7 +26,7 @@ export function Header() {
   const headerBackground = useTransform(
     scrollY,
     [0, 50],
-    ["rgba(var(--background), 0.6)", "rgba(var(--background), 0.8)"]
+    ["hsl(var(--background) / 0.6)", "hsl(var(--background) / 0.8)"]
   );
 
   const headerBlur = useTransform(

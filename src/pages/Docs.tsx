@@ -1,4 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
+import { PageTransition } from "@/components/layout/PageTransition";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -190,9 +191,10 @@ export default function Docs() {
 
   return (
     <Layout>
-      <div className="min-h-screen py-12">
-        <div className="container mx-auto px-4">
-          {/* Header */}
+      <PageTransition>
+        <div className="min-h-screen py-12">
+          <div className="container mx-auto px-4">
+            {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
               <span className="gradient-text">API Documentation</span>
@@ -477,6 +479,7 @@ export default function Docs() {
           </div>
         </div>
       </div>
+      </PageTransition>
     </Layout>
   );
 }
