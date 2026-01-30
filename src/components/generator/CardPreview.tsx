@@ -4,6 +4,7 @@ import { DevQuote } from "@/hooks/useDevQuote";
 import { useMemo, useState, useEffect } from "react";
 import { TiltCard } from "@/components/ui/TiltCard";
 import { Sparkles } from "lucide-react";
+import { CreativeLoader } from "@/components/ui/CreativeLoader";
 
 interface CardPreviewProps {
   config: CardConfig;
@@ -161,17 +162,7 @@ export function CardPreview({ config, githubData, quote }: CardPreviewProps) {
   return (
     <div className="flex justify-center items-center min-h-[300px] relative">
       {isLoading ? (
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative w-16 h-16">
-            <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
-            <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-            <div className="absolute inset-2 rounded-full bg-primary/10 animate-pulse" />
-          </div>
-          <div className="flex flex-col items-center gap-1">
-            <span className="font-medium text-foreground">Rendering Preview</span>
-            <span className="text-xs text-muted-foreground">Creating your masterpiece...</span>
-          </div>
-        </div>
+        <CreativeLoader />
       ) : imageSrc ? (
         <div className="animate-in fade-in zoom-in slide-in-from-bottom-4 duration-500 ease-out-back">
           <TiltCard
