@@ -1,4 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
+import { PageTransition } from "@/components/layout/PageTransition";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,7 @@ const endpoints = [
     name: "Language Breakdown",
     method: "GET",
     path: "/api/card?type=languages",
-    description: "Generate a card showing user's most used programming languages",
+    description: "Generate a horizontal bar chart showing user's most used programming languages with a 2-column legend",
     params: [
       { name: "username", type: "string", required: true, description: "GitHub username" },
       { name: "theme", type: "string", required: false, description: "Theme name" },
@@ -55,13 +56,55 @@ const endpoints = [
     name: "Contribution Streak",
     method: "GET",
     path: "/api/card?type=streak",
-    description: "Generate a card showing contribution streak statistics",
+    description: "Generate a card showing real contribution streak statistics (Total, Current, Longest) with fire animation. Requires server-side GITHUB_TOKEN.",
     params: [
       { name: "username", type: "string", required: true, description: "GitHub username" },
       { name: "theme", type: "string", required: false, description: "Theme name" },
       { name: "gradient", type: "boolean", required: false, description: "Enable gradient background" },
     ],
     example: "/api/card?type=streak&username=octocat",
+  },
+  {
+    id: "contribution",
+    name: "Contribution Heatmap",
+    method: "GET",
+    path: "/api/card?type=contribution",
+    description: "Generate a GitHub-style contribution calendar heatmap (52 weeks). Requires server-side GITHUB_TOKEN.",
+    params: [
+      { name: "username", type: "string", required: true, description: "GitHub username" },
+      { name: "theme", type: "string", required: false, description: "Theme name" },
+      { name: "gradient", type: "boolean", required: false, description: "Enable gradient background" },
+    ],
+    example: "/api/card?type=contribution&username=octocat",
+  },
+  {
+    id: "banner",
+    name: "Profile Banner",
+    method: "GET",
+    path: "/api/card?type=banner",
+    description: "Generate an animated banner with wave effect for your profile header/footer",
+    params: [
+      { name: "bannerName", type: "string", required: false, description: "Main text (e.g. Your Name)" },
+      { name: "bannerDescription", type: "string", required: false, description: "Subtitle text" },
+      { name: "waveStyle", type: "string", required: false, description: "Animation style (wave, pulse, flow, glitch)" },
+      { name: "width", type: "number", required: false, description: "Banner width (default: 854)" },
+      { name: "height", type: "number", required: false, description: "Banner height (default: 250)" },
+      { name: "theme", type: "string", required: false, description: "Theme name" },
+      { name: "gradient", type: "boolean", required: false, description: "Enable gradient background" },
+    ],
+    example: "/api/card?type=banner&bannerName=John%20Doe&bannerDescription=Full%20Stack%20Developer&width=1000",
+  },
+  {
+    id: "ai",
+    name: "AI Profile Generator",
+    method: "POST",
+    path: "/api/ai",
+    description: "Generate a comprehensive GitHub profile README using Gemini AI",
+    params: [
+      { name: "username", type: "string", required: true, description: "GitHub username" },
+      { name: "portfolio", type: "string", required: false, description: "Portfolio text content" },
+    ],
+    example: "/api/ai (POST body JSON)",
   },
   {
     id: "activity",
@@ -148,9 +191,10 @@ export default function Docs() {
 
   return (
     <Layout>
-      <div className="min-h-screen py-12">
-        <div className="container mx-auto px-4">
-          {/* Header */}
+      <PageTransition>
+        <div className="min-h-screen py-12">
+          <div className="container mx-auto px-4">
+            {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
               <span className="gradient-text">API Documentation</span>
@@ -435,6 +479,7 @@ export default function Docs() {
           </div>
         </div>
       </div>
+      </PageTransition>
     </Layout>
   );
 }

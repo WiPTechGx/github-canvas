@@ -16,6 +16,10 @@ interface CardParams {
   borderColor?: string;
   borderRadius?: number;
   showBorder?: boolean;
+  paddingTop?: number;
+  paddingRight?: number;
+  paddingBottom?: number;
+  paddingLeft?: number;
   width?: number;
   height?: number;
   customText?: string;
@@ -38,9 +42,9 @@ interface CardParams {
     totalForks: number;
   };
   languages?: Array<{ name: string; percentage: number; color: string }>;
-  streak?: { 
-    current: number; 
-    longest: number; 
+  streak?: {
+    current: number;
+    longest: number;
     total: number;
     startDate?: string;
     longestStreakStart?: string;
@@ -57,9 +61,9 @@ serve(async (req) => {
 
   try {
     let params: CardParams;
-    
+
     let format = 'svg';
-    
+
     if (req.method === 'GET') {
       const url = new URL(req.url);
       format = url.searchParams.get('format') || 'svg';
@@ -74,8 +78,12 @@ serve(async (req) => {
         borderColor: decodeURIComponent(url.searchParams.get('border') || '#0CF709'),
         borderRadius: parseInt(url.searchParams.get('radius') || '12'),
         showBorder: url.searchParams.get('showBorder') !== 'false',
-        width: parseInt(url.searchParams.get('width') || '495'),
-        height: parseInt(url.searchParams.get('height') || '195'),
+        paddingTop: parseInt(url.searchParams.get('paddingTop') || '25'),
+        paddingRight: parseInt(url.searchParams.get('paddingRight') || '25'),
+        paddingBottom: parseInt(url.searchParams.get('paddingBottom') || '25'),
+        paddingLeft: parseInt(url.searchParams.get('paddingLeft') || '25'),
+        width: url.searchParams.get('width') ? parseInt(url.searchParams.get('width')!) : undefined,
+        height: url.searchParams.get('height') ? parseInt(url.searchParams.get('height')!) : undefined,
         customText: url.searchParams.get('customText') || '',
         animate: url.searchParams.get('animate') !== 'false',
         animation: url.searchParams.get('animation') || 'fadeIn',
@@ -89,7 +97,7 @@ serve(async (req) => {
         bannerDescription: decodeURIComponent(url.searchParams.get('bannerDescription') || ''),
         waveStyle: url.searchParams.get('waveStyle') || 'wave',
       };
-      
+
       if (params.username && params.type !== 'quote' && params.type !== 'custom') {
         try {
           const statsResponse = await fetch(
@@ -100,7 +108,7 @@ serve(async (req) => {
               body: JSON.stringify({ username: params.username }),
             }
           );
-          
+
           if (statsResponse.ok) {
             const data = await statsResponse.json();
             params.stats = data.stats;
@@ -112,7 +120,7 @@ serve(async (req) => {
           console.log('Could not fetch GitHub stats for SVG:', e);
         }
       }
-      
+
       if (params.type === 'quote') {
         try {
           const quoteResponse = await fetch(
@@ -123,7 +131,7 @@ serve(async (req) => {
               body: JSON.stringify({}),
             }
           );
-          
+
           if (quoteResponse.ok) {
             params.quote = await quoteResponse.json();
           }
@@ -184,8 +192,10 @@ function generateSVG(params: CardParams): string {
     borderColor = '#0CF709',
     borderRadius = 12,
     showBorder = true,
-    width = 495,
-    height = 195,
+    paddingTop = 25,
+    paddingRight = 25,
+    paddingBottom = 25,
+    paddingLeft = 25,
     customText = '',
     animate = true,
     animation = 'fadeIn',
@@ -205,41 +215,77 @@ function generateSVG(params: CardParams): string {
     quote,
   } = params;
 
-  const borderStyle = showBorder 
-    ? `stroke="${borderColor}" stroke-width="2"` 
+  // Sanitize all user-controllable text parameters
+  const safeUsername = escapeHTML(username);
+  const safeCustomText = escapeHTML(customText);
+  const safeBannerName = escapeHTML(bannerName);
+  const safeBannerDescription = escapeHTML(bannerDescription);
+
+  // Sanitize colors as well since they are used in SVG attributes
+  const safeBgColor = escapeHTML(bgColor);
+  const safePrimaryColor = escapeHTML(primaryColor);
+  const safeSecondaryColor = escapeHTML(secondaryColor);
+  const safeTextColor = escapeHTML(textColor);
+  const safeBorderColor = escapeHTML(borderColor);
+  const safeGradientStart = escapeHTML(gradientStart);
+  const safeGradientEnd = escapeHTML(gradientEnd);
+
+  // Sanitize nested objects
+  const safeQuote = quote ? {
+    quote: escapeHTML(quote.quote),
+    author: escapeHTML(quote.author)
+  } : undefined;
+
+  const safeLanguages = languages?.map(lang => ({
+    ...lang,
+    name: escapeHTML(lang.name),
+    color: escapeHTML(lang.color)
+  }));
+
+  // Type-specific default dimensions
+  const defaultDimensions: Record<string, { width: number; height: number }> = {
+    languages: { width: 300, height: 300 },
+    contribution: { width: 620, height: 300 },
+  };
+  const defaults = defaultDimensions[type] || { width: 495, height: 195 };
+  const width = params.width || defaults.width;
+  const height = params.height || defaults.height;
+
+  const borderStyle = showBorder
+    ? `stroke="${safeBorderColor}" stroke-width="2"`
     : '';
 
   // Gradient helper functions
   const getGradientDefs = (): string => {
     if (!gradient) return '';
-    
+
     const id = 'bgGradient';
     if (gradientType === 'radial') {
       return `
         <defs>
           <radialGradient id="${id}" cx="50%" cy="50%" r="70%">
-            <stop offset="0%" stop-color="${gradientStart}"/>
-            <stop offset="100%" stop-color="${gradientEnd}"/>
+            <stop offset="0%" stop-color="${safeGradientStart}"/>
+            <stop offset="100%" stop-color="${safeGradientEnd}"/>
           </radialGradient>
         </defs>`;
     }
-    
+
     const angleRad = (gradientAngle - 90) * Math.PI / 180;
     const x1 = 50 - Math.cos(angleRad) * 50;
     const y1 = 50 - Math.sin(angleRad) * 50;
     const x2 = 50 + Math.cos(angleRad) * 50;
     const y2 = 50 + Math.sin(angleRad) * 50;
-    
+
     return `
       <defs>
         <linearGradient id="${id}" x1="${x1}%" y1="${y1}%" x2="${x2}%" y2="${y2}%">
-          <stop offset="0%" stop-color="${gradientStart}"/>
-          <stop offset="100%" stop-color="${gradientEnd}"/>
+          <stop offset="0%" stop-color="${safeGradientStart}"/>
+          <stop offset="100%" stop-color="${safeGradientEnd}"/>
         </linearGradient>
       </defs>`;
   };
 
-  const getBgFill = (): string => gradient ? 'url(#bgGradient)' : bgColor;
+  const getBgFill = (): string => gradient ? 'url(#bgGradient)' : safeBgColor;
 
   // Speed multiplier
   const getSpeedMultiplier = (s: string): number => {
@@ -268,7 +314,7 @@ function generateSVG(params: CardParams): string {
         .d1 { animation-delay: ${0.15 * m}s; } .d2 { animation-delay: ${0.3 * m}s; } .d3 { animation-delay: ${0.45 * m}s; } .d4 { animation-delay: ${0.6 * m}s; } .d5 { animation-delay: ${0.75 * m}s; }
       `,
       glow: `
-        @keyframes glow { 0%, 100% { filter: drop-shadow(0 0 3px ${primaryColor}40); } 50% { filter: drop-shadow(0 0 12px ${primaryColor}80); } }
+        @keyframes glow { 0%, 100% { filter: drop-shadow(0 0 3px ${safePrimaryColor}40); } 50% { filter: drop-shadow(0 0 12px ${safePrimaryColor}80); } }
         .anim { animation: glow ${2 * m}s ease-in-out infinite; }
       `,
       blink: `
@@ -311,13 +357,13 @@ function generateSVG(params: CardParams): string {
   const commonStyles = `
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap');
-      .title { font: 600 18px 'Inter', sans-serif; fill: ${primaryColor}; }
+      .title { font: 600 18px 'Inter', sans-serif; fill: ${safePrimaryColor}; }
       .stat-value { font: 700 24px 'Inter', sans-serif; }
-      .stat-label { font: 400 11px 'Inter', sans-serif; fill: ${textColor}; opacity: 0.7; }
-      .text { font: 400 14px 'Inter', sans-serif; fill: ${textColor}; }
-      .small { font: 400 10px 'Inter', sans-serif; fill: ${textColor}; opacity: 0.5; }
-      .quote { font: italic 400 16px 'Inter', sans-serif; fill: ${textColor}; }
-      .author { font: 400 13px 'Inter', sans-serif; fill: ${secondaryColor}; }
+      .stat-label { font: 400 11px 'Inter', sans-serif; fill: ${safeTextColor}; opacity: 0.7; }
+      .text { font: 400 14px 'Inter', sans-serif; fill: ${safeTextColor}; }
+      .small { font: 400 10px 'Inter', sans-serif; fill: ${safeTextColor}; opacity: 0.5; }
+      .quote { font: italic 400 16px 'Inter', sans-serif; fill: ${safeTextColor}; }
+      .author { font: 400 13px 'Inter', sans-serif; fill: ${safeSecondaryColor}; }
       ${animStyles}
     </style>
   `;
@@ -329,65 +375,82 @@ function generateSVG(params: CardParams): string {
     case 'stats':
       return generateStatsSVG({
         width, height, bgColor: bgFill, borderRadius, borderStyle,
-        primaryColor, secondaryColor, textColor, username, animate,
+        primaryColor: safePrimaryColor, secondaryColor: safeSecondaryColor, textColor: safeTextColor, username: safeUsername, animate,
         stats: stats || { totalStars: 0, publicRepos: 0, followers: 0, totalForks: 0 },
         commonStyles, gradientDefs,
       });
-    
+
     case 'languages':
       return generateLanguagesSVG({
         width, height, bgColor: bgFill, borderRadius, borderStyle,
-        primaryColor, secondaryColor, textColor, animate,
-        languages: languages || [],
+        paddingTop, paddingRight, paddingBottom, paddingLeft,
+        primaryColor: safePrimaryColor, secondaryColor: safeSecondaryColor, textColor: safeTextColor, animate,
+        languages: safeLanguages || [],
         commonStyles, gradientDefs,
       });
-    
+
     case 'streak':
       return generateStreakSVG({
         width, height, bgColor: bgFill, borderRadius, borderStyle,
-        primaryColor, secondaryColor, textColor, animate,
+        paddingTop, paddingRight, paddingBottom, paddingLeft,
+        primaryColor: safePrimaryColor, secondaryColor: safeSecondaryColor, textColor: safeTextColor, animate,
         streak: streak || { current: 0, longest: 0, total: 0 },
         commonStyles, gradientDefs,
       });
-    
+
+    case 'contribution':
+      return generateContributionSVG({
+        width, height, bgColor: bgFill, borderRadius, borderStyle,
+        primaryColor: safePrimaryColor, secondaryColor: safeSecondaryColor, textColor: safeTextColor, animate,
+        contributionDays: streak?.days || [],
+        streak: streak || { current: 0, total: 0 },
+        username: safeUsername,
+        commonStyles, gradientDefs,
+      });
+
     case 'activity':
       return generateActivitySVG({
         width, height, bgColor: bgFill, borderRadius, borderStyle,
-        primaryColor, secondaryColor, textColor, animate,
+        paddingTop, paddingRight, paddingBottom, paddingLeft,
+        primaryColor: safePrimaryColor, secondaryColor: safeSecondaryColor, textColor: safeTextColor, animate,
         activity: activity || Array(30).fill(0),
         commonStyles, gradientDefs,
       });
-    
+
     case 'quote':
       return generateQuoteSVG({
         width, height, bgColor: bgFill, borderRadius, borderStyle,
-        primaryColor, secondaryColor, textColor, animate,
-        quote: quote || { quote: "Code is poetry.", author: "Anonymous" },
+        paddingTop, paddingRight, paddingBottom, paddingLeft,
+        primaryColor: safePrimaryColor, secondaryColor: safeSecondaryColor, textColor: safeTextColor, animate,
+        quote: safeQuote || { quote: "Code is poetry.", author: "Anonymous" },
         commonStyles, gradientDefs,
       });
-    
+
     case 'custom':
       return generateCustomSVG({
         width, height, bgColor: bgFill, borderRadius, borderStyle,
-        primaryColor, textColor, customText, animate,
+        paddingTop, paddingRight, paddingBottom, paddingLeft,
+        primaryColor: safePrimaryColor, textColor: safeTextColor, customText: safeCustomText, animate,
         commonStyles, gradientDefs,
       });
-    
+
     case 'banner':
       return generateBannerSVG({
         width, height, bgColor: bgFill, borderRadius, borderStyle,
-        primaryColor, secondaryColor, textColor, animate, speed,
-        bannerName: bannerName || 'Your Name',
-        bannerDescription: bannerDescription || 'Developer | Creator | Builder',
+        paddingTop, paddingRight, paddingBottom, paddingLeft,
+        primaryColor: safePrimaryColor, secondaryColor: safeSecondaryColor, textColor: safeTextColor, animate, speed,
+        bannerName: safeBannerName || 'Your Name',
+        bannerDescription: safeBannerDescription || 'Developer | Creator | Builder',
         waveStyle,
-        gradientStart, gradientEnd,
+        gradientStart: safeGradientStart, gradientEnd: safeGradientEnd,
         commonStyles, gradientDefs,
       });
-    
+
     default:
       return generateStatsSVG({
         width, height, bgColor: bgFill, borderRadius, borderStyle,
-        primaryColor, secondaryColor, textColor, username, animate,
+        paddingTop, paddingRight, paddingBottom, paddingLeft,
+        primaryColor: safePrimaryColor, secondaryColor: safeSecondaryColor, textColor: safeTextColor, username: safeUsername, animate,
         stats: stats || { totalStars: 0, publicRepos: 0, followers: 0, totalForks: 0 },
         commonStyles, gradientDefs,
       });
@@ -396,31 +459,31 @@ function generateSVG(params: CardParams): string {
 
 function generateStatsSVG(p: any): string {
   const { stats } = p;
-  
+
   return `
 <svg width="${p.width}" height="${p.height}" viewBox="0 0 ${p.width} ${p.height}" xmlns="http://www.w3.org/2000/svg">
   ${p.gradientDefs || ''}
   ${p.commonStyles}
   <rect x="1" y="1" width="${p.width - 2}" height="${p.height - 2}" rx="${p.borderRadius}" fill="${p.bgColor}" ${p.borderStyle}/>
-  
+
   <g transform="translate(25, 25)">
     <text class="title">${p.username}'s GitHub Stats</text>
-    
+
     <g transform="translate(0, 45)">
       <text class="stat-value" fill="${p.primaryColor}">⭐ ${formatNumber(stats.totalStars)}</text>
       <text class="stat-label" y="22">Total Stars</text>
     </g>
-    
+
     <g transform="translate(115, 45)">
       <text class="stat-value" fill="${p.secondaryColor}">📦 ${stats.publicRepos}</text>
       <text class="stat-label" y="22">Repositories</text>
     </g>
-    
+
     <g transform="translate(230, 45)">
       <text class="stat-value" fill="${p.primaryColor}">👥 ${formatNumber(stats.followers)}</text>
       <text class="stat-label" y="22">Followers</text>
     </g>
-    
+
     <g transform="translate(345, 45)">
       <text class="stat-value" fill="${p.secondaryColor}">🔀 ${formatNumber(stats.totalForks)}</text>
       <text class="stat-label" y="22">Total Forks</text>
@@ -432,158 +495,354 @@ function generateStatsSVG(p: any): string {
 function generateLanguagesSVG(p: any): string {
   const { languages, animate } = p;
   const langs = languages.slice(0, 6);
-  const barWidth = p.width - 50;
-  const barHeight = 8;
-  const leftPadding = 25;
-  
-  // Generate the stacked progress bar segments
-  let barSegments = '';
-  let currentX = 0;
-  
-  for (let i = 0; i < langs.length; i++) {
-    const lang = langs[i];
-    const segmentWidth = barWidth * (lang.percentage / 100);
-    const animClass = animate ? `class="lang-progress"` : '';
-    barSegments += `<rect mask="url(#rect-mask)" data-testid="lang-progress" x="${currentX}" y="0" width="${segmentWidth}" height="${barHeight}" fill="${lang.color}" ${animClass}/>`;
-    currentX += segmentWidth;
-  }
-  
-  // Generate the legend - 2 columns, 3 rows (first 3 in left column, next 3 in right column)
-  let leftColumn = '';
-  let rightColumn = '';
-  const colSpacing = 150;
-  const rowSpacing = 25;
-  
-  for (let i = 0; i < langs.length; i++) {
-    const lang = langs[i];
-    const col = i < 3 ? 0 : 1;
-    const row = i < 3 ? i : i - 3;
-    const delay = animate ? `style="animation-delay: ${450 + (i * 150)}ms"` : '';
-    
-    const item = `<g transform="translate(0, ${row * rowSpacing})">
-    <g class="${animate ? 'stagger' : ''}" ${delay}>
-      <circle cx="5" cy="6" r="5" fill="${lang.color}"/>
-      <text data-testid="lang-name" x="15" y="10" class="lang-name">${lang.name} ${lang.percentage}%</text>
-    </g>
-  </g>`;
-    
-    if (col === 0) {
-      leftColumn += item;
-    } else {
-      rightColumn += item;
-    }
-  }
-  
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${p.width}" height="${p.height}" viewBox="0 0 ${p.width} ${p.height}" fill="none" role="img">
-  ${p.gradientDefs || ''}
-  <style>
-    .header { font: 600 18px 'Segoe UI', Ubuntu, Sans-Serif; fill: ${p.primaryColor}; animation: fadeInAnimation 0.8s ease-in-out forwards; }
-    @supports(-moz-appearance: auto) { .header { font-size: 15.5px; } }
-    .lang-name { font: 400 11px "Segoe UI", Ubuntu, Sans-Serif; fill: ${p.textColor}; }
-    ${animate ? `
-    @keyframes slideInAnimation { from { width: 0; } to { width: calc(100%-100px); } }
-    @keyframes growWidthAnimation { from { width: 0; } to { width: 100%; } }
-    @keyframes fadeInAnimation { from { opacity: 0; } to { opacity: 1; } }
-    .stagger { opacity: 0; animation: fadeInAnimation 0.3s ease-in-out forwards; }
-    #rect-mask rect { animation: slideInAnimation 1s ease-in-out forwards; }
-    .lang-progress { animation: growWidthAnimation 0.6s ease-in-out forwards; }
-    ` : ''}
-  </style>
-  
-  <rect data-testid="card-bg" x="0.5" y="0.5" rx="${p.borderRadius}" height="99%" width="${p.width - 1}" fill="${p.bgColor}" ${p.borderStyle}/>
-  
-  <g data-testid="card-title" transform="translate(${leftPadding}, 35)">
-    <text x="0" y="0" class="header" data-testid="header">Most Used Languages</text>
-  </g>
-  
-  <g data-testid="main-card-body" transform="translate(0, 55)">
-    <svg data-testid="lang-items" x="${leftPadding}">
-      <mask id="rect-mask">
-        <rect x="0" y="0" width="${barWidth}" height="${barHeight}" fill="white" rx="5"/>
-      </mask>
-      ${barSegments}
-      
-      <g transform="translate(0, 25)">
-        <g transform="translate(0, 0)">${leftColumn}</g>
-        <g transform="translate(${colSpacing}, 0)">${rightColumn}</g>
+
+  // Card dimensions (language card uses taller resolution)
+  const cardWidth = p.width || 300;
+  const cardHeight = p.height || 300;
+  const rowHeight = 28;
+  const rowGap = 6;
+  const maxBarWidth = 145;
+
+  // Get max percentage for scaling
+  const maxPercentage = Math.max(...langs.map((l: any) => l.percentage), 35);
+
+  // Language-specific gradient colors
+  const langGradients: Record<string, { start: string; end: string; pct: string }> = {
+    'JavaScript': { start: '#FDE047', end: '#F59E0B', pct: '#F59E0B' },
+    'TypeScript': { start: '#22D3EE', end: '#0284C7', pct: '#0284C7' },
+    'Python': { start: '#38BDF8', end: '#2563EB', pct: '#2563EB' },
+    'Go': { start: '#67E8F9', end: '#0EA5E9', pct: '#0EA5E9' },
+    'C++': { start: '#C084FC', end: '#6D28D9', pct: '#7C3AED' },
+    'C': { start: '#A3A3A3', end: '#525252', pct: '#525252' },
+    'Ruby': { start: '#FB7185', end: '#E11D48', pct: '#E11D48' },
+    'Rust': { start: '#FB923C', end: '#EA580C', pct: '#EA580C' },
+    'Java': { start: '#F87171', end: '#DC2626', pct: '#DC2626' },
+    'PHP': { start: '#A78BFA', end: '#7C3AED', pct: '#7C3AED' },
+    'HTML': { start: '#FB923C', end: '#EA580C', pct: '#EA580C' },
+    'CSS': { start: '#60A5FA', end: '#2563EB', pct: '#2563EB' },
+    'Shell': { start: '#4ADE80', end: '#16A34A', pct: '#16A34A' },
+    'Swift': { start: '#FB923C', end: '#F97316', pct: '#F97316' },
+    'Kotlin': { start: '#A78BFA', end: '#7C3AED', pct: '#7C3AED' },
+    'Dart': { start: '#22D3EE', end: '#0891B2', pct: '#0891B2' },
+    'Vue': { start: '#4ADE80', end: '#059669', pct: '#059669' },
+    'default': { start: '#94A3B8', end: '#475569', pct: '#475569' },
+  };
+
+  // Get short name for badge
+  const getBadge = (name: string): string => {
+    const badges: Record<string, string> = {
+      'JavaScript': 'JS', 'TypeScript': 'TS', 'Python': 'Py', 'C++': 'C+',
+      'C#': 'C#', 'Go': 'Go', 'Ruby': '💎', 'Rust': 'Rs', 'Java': 'Jv',
+      'PHP': 'PH', 'HTML': 'HT', 'CSS': 'CS', 'Shell': 'SH', 'Swift': 'Sw',
+      'Kotlin': 'Kt', 'Dart': 'Dt', 'Vue': 'Vu', 'C': 'C',
+    };
+    return badges[name] || name.substring(0, 2).toUpperCase();
+  };
+
+  // Generate gradient definitions
+  let gradientDefs = '';
+  langs.forEach((lang: any, i: number) => {
+    const grad = langGradients[lang.name] || langGradients['default'];
+    gradientDefs += `
+    <linearGradient id="gLang${i}" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="${grad.start}"/>
+      <stop offset="1" stop-color="${grad.end}"/>
+    </linearGradient>`;
+  });
+
+  // Generate rows
+  let rows = '';
+  langs.forEach((lang: any, i: number) => {
+    const y = 62 + i * (rowHeight + rowGap);
+    const barWidth = Math.max((lang.percentage / maxPercentage) * maxBarWidth, 20);
+    const grad = langGradients[lang.name] || langGradients['default'];
+    const badge = getBadge(lang.name);
+    const delayClass = animate ? `class="delay-${i + 1}"` : '';
+
+    rows += `
+    <!-- Row ${i + 1}: ${lang.name} -->
+    <g ${delayClass}>
+      <g filter="url(#rowShadow)">
+        <rect x="24" y="${y}" width="232" height="${rowHeight}" rx="14" fill="url(#rowBg)"/>
+        <rect x="24" y="${y}" width="232" height="${rowHeight}" rx="14" fill="none" stroke="#DDE6FF" stroke-opacity="0.8"/>
+        <path d="M28 ${y + 4} H252" stroke="#FFFFFF" stroke-width="2" opacity="0.65" stroke-linecap="round"/>
       </g>
-    </svg>
+
+      <!-- Subtle glow -->
+      <circle cx="40" cy="${y + 14}" r="14" fill="${grad.start}" opacity="0.2" filter="url(#bokeh)"/>
+
+      <!-- Badge -->
+      <rect x="32" y="${y + 5}" width="18" height="18" rx="6" fill="${grad.start}" opacity="0.95"/>
+      <text x="41" y="${y + 18}" text-anchor="middle" class="mini" fill="#111827">${badge}</text>
+
+      <!-- Label & Percentage -->
+      <text x="58" y="${y + 18}" class="label">${lang.name}</text>
+      <text x="244" y="${y + 18}" text-anchor="end" class="pct" fill="${grad.pct}">${Math.round(lang.percentage)}%</text>
+
+      <!-- Progress Bar -->
+      <rect x="58" y="${y + 20}" width="${barWidth}" height="6" rx="3" fill="url(#gLang${i})" filter="url(#barGlow)"/>
+    </g>`;
+  });
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${cardWidth}" height="${cardHeight}" viewBox="0 0 ${cardWidth} ${cardHeight}">
+  <defs>
+    <!-- Card background gradient -->
+    <linearGradient id="cardBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#EAF5FF"/>
+      <stop offset="0.55" stop-color="#F2F0FF"/>
+      <stop offset="1" stop-color="#FFF1F7"/>
+    </linearGradient>
+
+    <!-- Row background -->
+    <linearGradient id="rowBg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F6F8FF"/>
+    </linearGradient>
+
+    ${gradientDefs}
+
+    <!-- Shadows -->
+    <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#2B3A67" flood-opacity="0.18"/>
+    </filter>
+    <filter id="rowShadow" x="-20%" y="-50%" width="140%" height="200%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#2B3A67" flood-opacity="0.12"/>
+    </filter>
+    <filter id="barGlow" x="-30%" y="-200%" width="160%" height="500%">
+      <feGaussianBlur stdDeviation="1.2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="bokeh" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+
+    <style>
+      .title { font: 700 18px/1.2 Inter, system-ui, sans-serif; fill: #1F3B7A; }
+      .label { font: 700 13px/1.2 Inter, system-ui, sans-serif; fill: #2B3A67; }
+      .pct   { font: 800 13px/1.2 Inter, system-ui, sans-serif; }
+      .mini  { font: 800 9px/1.0 Inter, system-ui, sans-serif; }
+      ${animate ? `
+      @keyframes fadeIn { 0% { opacity: 0; transform: translateY(8px); } 100% { opacity: 1; transform: translateY(0); } }
+      .card { animation: fadeIn 0.4s ease-out forwards; opacity: 0; }
+      .delay-1 { animation: fadeIn 0.4s ease-out 0.1s forwards; opacity: 0; }
+      .delay-2 { animation: fadeIn 0.4s ease-out 0.15s forwards; opacity: 0; }
+      .delay-3 { animation: fadeIn 0.4s ease-out 0.2s forwards; opacity: 0; }
+      .delay-4 { animation: fadeIn 0.4s ease-out 0.25s forwards; opacity: 0; }
+      .delay-5 { animation: fadeIn 0.4s ease-out 0.3s forwards; opacity: 0; }
+      .delay-6 { animation: fadeIn 0.4s ease-out 0.35s forwards; opacity: 0; }
+      ` : ''}
+    </style>
+  </defs>
+
+  <!-- Card -->
+  <g filter="url(#cardShadow)" ${animate ? 'class="card"' : ''}>
+    <rect x="10" y="10" width="${cardWidth - 20}" height="${cardHeight - 20}" rx="22" fill="url(#cardBg)"/>
+
+    <!-- Soft bokeh dots -->
+    <g filter="url(#bokeh)" opacity="0.55">
+      <circle cx="${cardWidth - 55}" cy="34" r="12" fill="#FDE68A"/>
+      <circle cx="${cardWidth - 34}" cy="44" r="10" fill="#C7D2FE"/>
+      <circle cx="${cardWidth - 45}" cy="56" r="9" fill="#FDA4AF"/>
+    </g>
+
+    <!-- Header icon + title -->
+    <g transform="translate(26 28)">
+      <path d="M10 3 L4 9 L10 15" fill="none" stroke="#7C3AED" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M22 3 L28 9 L22 15" fill="none" stroke="#38BDF8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M16 2 L13 9 L17 9 L14 16" fill="none" stroke="#F59E0B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <text x="58" y="42" class="title">Top Languages</text>
+
+    <!-- Language Rows -->
+    ${rows}
   </g>
 </svg>`;
 }
 
 function generateStreakSVG(p: any): string {
   const { streak, animate } = p;
-  const centerX = p.width / 2;
-  const sectionWidth = p.width / 3;
-  
+
   // Format dates
   const formatDate = (dateStr: string | undefined) => {
     if (!dateStr) return 'Present';
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${months[date.getMonth()]} ${date.getDate()}`;
   };
-  
+
   const today = new Date();
-  const todayStr = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  
-  // Calculate ring progress (max 100 days for full circle)
-  const maxStreak = 100;
-  const progress = Math.min(streak.current / maxStreak, 1);
-  const circumference = 2 * Math.PI * 40;
-  const dashOffset = circumference * (1 - progress);
-  
+  const todayStr = `${today.toLocaleString('default', { month: 'short' })} ${today.getDate()}`;
+
+  // Date ranges
+  const totalRange = `${formatDate(streak.startDate)} - ${formatDate(streak.endDate) || 'Present'}`;
+  const longestRange = `${formatDate(streak.longestStreakStart)} - ${formatDate(streak.longestStreakEnd)}`;
+
   const ringAnim = animate ? `
     <style>
       .ring-bg { opacity: 0.2; }
-      .ring-progress { 
-        stroke-dasharray: ${circumference}; 
-        stroke-dashoffset: ${circumference};
-        animation: dash 1.5s ease-out forwards;
+      @keyframes currstreak {
+          0% { font-size: 3px; opacity: 0.2; }
+          80% { font-size: 34px; opacity: 1; }
+          100% { font-size: 28px; opacity: 1; }
       }
-      @keyframes dash {
-        to { stroke-dashoffset: ${dashOffset}; }
+      @keyframes fadein {
+          0% { opacity: 0; }
+          100% { opacity: 1; }
       }
     </style>
   ` : '';
-  
-  const fadeClass = animate ? 'class="animate-fade stagger-1"' : '';
-  const scaleClass = animate ? 'class="animate-scale"' : '';
-  const fadeClass2 = animate ? 'class="animate-fade stagger-3"' : '';
 
   return `
 <svg width="${p.width}" height="${p.height}" viewBox="0 0 ${p.width} ${p.height}" xmlns="http://www.w3.org/2000/svg">
   ${p.commonStyles}
   ${ringAnim}
+  <defs>
+      <mask id="mask_out_ring_behind_fire">
+          <rect width="${p.width}" height="${p.height}" fill="white"/>
+          <ellipse id="mask-ellipse" cx="${p.width / 2}" cy="32" rx="13" ry="18" fill="black"/>
+      </mask>
+  </defs>
   <rect x="1" y="1" width="${p.width - 2}" height="${p.height - 2}" rx="${p.borderRadius}" fill="${p.bgColor}" ${p.borderStyle}/>
-  
+
+  <g style="isolation: isolate">
+      <line x1="${p.width / 3}" y1="28" x2="${p.width / 3}" y2="170" vector-effect="non-scaling-stroke" stroke-width="1" stroke="${p.borderColor}" stroke-linejoin="miter" stroke-linecap="square" stroke-miterlimit="3" opacity="0.5"/>
+      <line x1="${(p.width / 3) * 2}" y1="28" x2="${(p.width / 3) * 2}" y2="170" vector-effect="non-scaling-stroke" stroke-width="1" stroke="${p.borderColor}" stroke-linejoin="miter" stroke-linecap="square" stroke-miterlimit="3" opacity="0.5"/>
+  </g>
+
   <!-- Left Section: Total Contributions -->
-  <g transform="translate(${sectionWidth / 2}, ${p.height / 2})" ${fadeClass}>
-    <text text-anchor="middle" class="stat-value" fill="${p.secondaryColor}" y="-15">${formatNumber(streak.total)}</text>
-    <text text-anchor="middle" class="stat-label" y="8">Total Contributions</text>
-    <text text-anchor="middle" class="small" y="24">${formatDate(streak.startDate)} - Present</text>
+  <g transform="translate(${p.width / 6}, 48)">
+    <text text-anchor="middle" class="stat-value" fill="${p.primaryColor}" y="32">${formatNumber(streak.total)}</text>
+    <text text-anchor="middle" class="stat-label" y="64">Total Contributions</text>
+    <text text-anchor="middle" class="small" y="94">${totalRange}</text>
   </g>
-  
-  <!-- Center Section: Current Streak with Ring -->
-  <g transform="translate(${centerX}, ${p.height / 2})" ${scaleClass}>
-    <!-- Ring Background -->
-    <circle cx="0" cy="0" r="40" fill="none" stroke="${p.primaryColor}" stroke-width="6" class="ring-bg"/>
-    <!-- Ring Progress -->
-    <circle cx="0" cy="0" r="40" fill="none" stroke="${p.primaryColor}" stroke-width="6" 
-            stroke-linecap="round" transform="rotate(-90)" class="ring-progress"/>
-    <!-- Flame Icon -->
-    <text text-anchor="middle" font-size="20" y="-25" fill="${p.primaryColor}">🔥</text>
-    <!-- Current Streak Number -->
-    <text text-anchor="middle" class="stat-value" fill="${p.primaryColor}" y="5" font-size="28">${streak.current}</text>
-    <text text-anchor="middle" class="stat-label" y="55">Current Streak</text>
-    <text text-anchor="middle" class="small" y="70">${todayStr}</text>
+
+  <!-- Center Section: Current Streak -->
+  <g transform="translate(${p.width / 2}, 48)">
+    <text text-anchor="middle" class="stat-value" fill="${p.secondaryColor}" y="32" style="animation: currstreak 0.6s linear forwards">${formatNumber(streak.current)}</text>
+    <text text-anchor="middle" class="stat-label" y="90">Current Streak</text>
+    <text text-anchor="middle" class="small" y="125">${todayStr}</text>
+
+    <!-- Ring -->
+    <g mask="url(#mask_out_ring_behind_fire)">
+        <circle cx="0" cy="23" r="40" fill="none" stroke="${p.primaryColor}" stroke-width="5" style="opacity: 0; animation: fadein 0.5s linear forwards 0.4s"/>
+    </g>
+    <!-- Fire -->
+    <g transform="translate(0, -28)" stroke-opacity="0" style="opacity: 0; animation: fadein 0.5s linear forwards 0.6s">
+        <path d="M -12 -0.5 L 15 -0.5 L 15 23.5 L -12 23.5 L -12 -0.5 Z" fill="none"/>
+        <path d="M 1.5 0.67 C 1.5 0.67 2.24 3.32 2.24 5.47 C 2.24 7.53 0.89 9.2 -1.17 9.2 C -3.23 9.2 -4.79 7.53 -4.79 5.47 L -4.76 5.11 C -6.78 7.51 -8 10.62 -8 13.99 C -8 18.41 -4.42 22 0 22 C 4.42 22 8 18.41 8 13.99 C 8 8.6 5.41 3.79 1.5 0.67 Z M -0.29 19 C -2.07 19 -3.51 17.6 -3.51 15.86 C -3.51 14.24 -2.46 13.1 -0.7 12.74 C 1.07 12.38 2.9 11.53 3.92 10.16 C 4.31 11.45 4.51 12.81 4.51 14.2 C 4.51 16.85 2.36 19 -0.29 19 Z" fill="${p.primaryColor}" stroke-opacity="0"/>
+    </g>
   </g>
-  
+
   <!-- Right Section: Longest Streak -->
-  <g transform="translate(${p.width - sectionWidth / 2}, ${p.height / 2})" ${fadeClass2}>
-    <text text-anchor="middle" class="stat-value" fill="${p.secondaryColor}" y="-15">${streak.longest}</text>
-    <text text-anchor="middle" class="stat-label" y="8">Longest Streak</text>
-    <text text-anchor="middle" class="small" y="24">${formatDate(streak.longestStreakStart)} - ${formatDate(streak.longestStreakEnd)}</text>
+  <g transform="translate(${(p.width / 6) * 5}, 48)">
+    <text text-anchor="middle" class="stat-value" fill="${p.primaryColor}" y="32">${formatNumber(streak.longest)}</text>
+    <text text-anchor="middle" class="stat-label" y="64">Longest Streak</text>
+    <text text-anchor="middle" class="small" y="94">${longestRange}</text>
+  </g>
+</svg>`;
+}
+
+function generateContributionSVG(p: any): string {
+  const { contributionDays = [], animate, streak = {} } = p;
+
+  // Card dimensions optimized for this layout
+  const cardWidth = p.width || 620;
+  const cardHeight = p.height || 300;
+
+  // Grid settings
+  const cols = 53;
+  const rows = 7;
+  const cellSize = 8;
+  const gap = 3;
+  const pitch = cellSize + gap;
+  const gridWidth = cols * pitch - gap;
+  const gridHeight = rows * pitch - gap;
+  const gridX = (cardWidth - gridWidth) / 2;
+  const gridY = 100;
+
+  // Use real data if available, otherwise fallback to sample
+  const displayDays = contributionDays.length > 0
+    ? contributionDays.slice(-(cols * rows))
+    : Array(cols * rows).fill(0).map(() => ({ contributionCount: Math.random() > 0.6 ? Math.floor(Math.random() * 6) : 0 }));
+
+  // Count total contributions
+  const totalContributions = displayDays.reduce((sum: number, d: any) => sum + (d.contributionCount || 0), 0);
+  const currentStreak = streak.current || 0;
+  const username = p.username || 'C';
+  const initial = username.substring(0, 1).toUpperCase();
+
+  // Color levels for contribution intensity
+  const getLevelColor = (count: number) => {
+    if (count === 0) return '#1e1e1e';
+    if (count <= 1) return '#0e4429';
+    if (count <= 3) return '#006d32';
+    if (count <= 6) return '#26a641';
+    return '#39d353';
+  };
+
+  // Generate grid cells
+  let cells = '';
+  for (let c = 0; c < cols; c++) {
+    for (let r = 0; r < rows; r++) {
+      const idx = c * rows + r;
+      const dayData = displayDays[idx] || { contributionCount: 0 };
+      const x = gridX + c * pitch;
+      const y = gridY + r * pitch;
+      const delay = animate ? `style="animation-delay: ${(c * 0.015)}s"` : '';
+      const animClass = animate ? 'class="cell-anim"' : '';
+      cells += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" rx="2" fill="${getLevelColor(dayData.contributionCount)}" ${animClass} ${delay}/>`;
+    }
+  }
+
+  const animStyles = animate ? `
+    @keyframes fadeCell {
+      0% { opacity: 0; transform: scale(0.5); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    .cell-anim { animation: fadeCell 0.3s ease-out forwards; opacity: 0; }
+  ` : '';
+
+  return `
+<svg width="${cardWidth}" height="${cardHeight}" viewBox="0 0 ${cardWidth} ${cardHeight}" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap');
+    .title { font: 600 20px 'Inter', sans-serif; fill: #ffffff; }
+    .streak { font: 600 16px 'Inter', sans-serif; fill: #9ca3af; }
+    .streak-value { font: 700 16px 'Inter', sans-serif; fill: #22c55e; }
+    .total { font: 400 18px 'Inter', sans-serif; fill: #6b7280; }
+    .total-value { font: 700 24px 'Inter', sans-serif; fill: #ffffff; }
+    ${animStyles}
+  </style>
+
+  <!-- Card background -->
+  <rect x="1" y="1" width="${cardWidth - 2}" height="${cardHeight - 2}" rx="${p.borderRadius || 16}" fill="${p.bgColor || '#0d1117'}" stroke="${p.primaryColor || '#22c55e'}" stroke-width="2"/>
+
+  <!-- Header -->
+  <g transform="translate(30, 30)">
+    <!-- Avatar circle -->
+    <circle cx="24" cy="24" r="24" fill="#6366f1"/>
+    <text x="24" y="32" text-anchor="middle" font-size="22" font-weight="bold" fill="#ffffff">${initial}</text>
+
+    <!-- Title -->
+    <text x="60" y="32" class="title">My contributions</text>
+
+    <!-- Streak badge on right -->
+    <g transform="translate(${cardWidth - 190}, 0)">
+      <text x="0" y="28" class="streak">Streak</text>
+      <text x="55" y="28" class="streak-value">${currentStreak} days</text>
+      <text x="${currentStreak >= 10 ? 130 : 115}" y="28" font-size="18">🔥</text>
+    </g>
+  </g>
+
+  <!-- Contribution Grid -->
+  <g>
+    ${cells}
+  </g>
+
+  <!-- Footer: Total contributions -->
+  <g transform="translate(${cardWidth - 200}, ${cardHeight - 40})">
+    <text x="0" y="0" class="total-value">${formatNumber(totalContributions)}</text>
+    <text x="${totalContributions >= 1000 ? 45 : 35}" y="0" class="total"> contributions</text>
   </g>
 </svg>`;
 }
@@ -592,21 +851,21 @@ function generateActivitySVG(p: any): string {
   const { activity, animate } = p;
   const barWidth = (p.width - 80) / 30;
   const maxActivity = Math.max(...activity, 1);
-  
+
   let bars = '';
   for (let i = 0; i < activity.length; i++) {
     const height = (activity[i] / maxActivity) * 80;
-    const color = activity[i] > maxActivity * 0.6 
-      ? p.primaryColor 
-      : activity[i] > maxActivity * 0.3 
-        ? p.secondaryColor 
+    const color = activity[i] > maxActivity * 0.6
+      ? p.primaryColor
+      : activity[i] > maxActivity * 0.3
+        ? p.secondaryColor
         : `${p.primaryColor}66`;
-    
+
     const delay = animate ? `style="animation-delay: ${i * 0.03}s"` : '';
     const animClass = animate ? 'class="animate-fade"' : '';
     bars += `<rect x="${40 + i * barWidth}" y="${130 - height}" width="${barWidth - 2}" height="${height}" rx="2" fill="${color}" ${animClass} ${delay}/>`;
   }
-  
+
   return `
 <svg width="${p.width}" height="${p.height}" viewBox="0 0 ${p.width} ${p.height}" xmlns="http://www.w3.org/2000/svg">
   ${p.commonStyles}
@@ -620,15 +879,16 @@ function generateActivitySVG(p: any): string {
 
 function generateQuoteSVG(p: any): string {
   const { quote, animate } = p;
-  const centerX = p.width / 2;
-  
-  // Word wrap the quote text - max ~38 chars per line for better display with margins
+  const cardWidth = p.width || 495;
+  const cardHeight = p.height || 180;
+
+  // Word wrap the quote text - max ~45 chars per line
   const words = quote.quote.split(' ');
   let lines: string[] = [];
   let currentLine = '';
-  
+
   for (const word of words) {
-    if ((currentLine + ' ' + word).length > 38) {
+    if ((currentLine + ' ' + word).length > 45) {
       lines.push(currentLine.trim());
       currentLine = word;
     } else {
@@ -636,58 +896,77 @@ function generateQuoteSVG(p: any): string {
     }
   }
   if (currentLine) lines.push(currentLine.trim());
-  
-  // Limit to max 4 lines to prevent overflow
-  if (lines.length > 4) {
-    lines = lines.slice(0, 4);
-    lines[3] = lines[3].substring(0, lines[3].length - 3) + '...';
+
+  // Limit to max 3 lines
+  if (lines.length > 3) {
+    lines = lines.slice(0, 3);
+    lines[2] = lines[2].substring(0, lines[2].length - 3) + '...';
   }
-  
-  // Calculate vertical positioning
-  const headerHeight = 55; // Icon + title
-  const authorHeight = 30; // Author at bottom
-  const quoteMarkSize = 30; // Space for quote marks
+
   const lineHeight = 22;
   const totalTextHeight = lines.length * lineHeight;
-  
-  // Center the quote vertically in the available space
-  const availableSpace = p.height - headerHeight - authorHeight - quoteMarkSize;
-  const startY = headerHeight + (availableSpace - totalTextHeight) / 2 + 20;
-  
-  const quoteLines = lines.map((line, i) => 
-    `<tspan x="${centerX}" dy="${i === 0 ? 0 : lineHeight}">${line}</tspan>`
+  const startY = 70 + (60 - totalTextHeight) / 2;
+
+  const quoteLines = lines.map((line, i) =>
+    `<tspan x="${cardWidth / 2}" dy="${i === 0 ? 0 : lineHeight}">${line}</tspan>`
   ).join('');
-  
-  const animClass1 = animate ? 'class="anim d1"' : '';
-  
+
+  const animStyles = animate ? `
+    @keyframes fadeInUp {
+      0% { opacity: 0; transform: translateY(10px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .anim { animation: fadeInUp 0.5s ease-out forwards; opacity: 0; }
+    .d1 { animation-delay: 0.1s; }
+    .d2 { animation-delay: 0.2s; }
+    .d3 { animation-delay: 0.3s; }
+  ` : '';
+
+  // GitHub Octocat SVG path (simplified)
+  const octocatPath = `M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z`;
+
   return `
-<svg width="${p.width}" height="${p.height}" viewBox="0 0 ${p.width} ${p.height}" xmlns="http://www.w3.org/2000/svg">
-  ${p.gradientDefs || ''}
-  ${p.commonStyles}
+<svg width="${cardWidth}" height="${cardHeight}" viewBox="0 0 ${cardWidth} ${cardHeight}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="quoteBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0d1117"/>
+      <stop offset="1" stop-color="#161b22"/>
+    </linearGradient>
+  </defs>
   <style>
-    .quote-mark { font: 700 36px 'Inter', sans-serif; fill: ${p.secondaryColor}; opacity: 0.6; }
-    .quote-text { font: italic 400 15px 'Inter', sans-serif; fill: ${p.textColor}; }
-    .quote-author { font: 400 13px 'Inter', sans-serif; fill: ${p.secondaryColor}; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap');
+    .title { font: 600 14px 'Inter', sans-serif; fill: ${p.primaryColor || '#0CF709'}; }
+    .quote-mark { font: 700 48px Georgia, serif; fill: ${p.secondaryColor || '#00e1ff'}; opacity: 0.7; }
+    .quote-text { font: italic 400 14px 'Inter', sans-serif; fill: ${p.textColor || '#c9d1d9'}; }
+    .quote-author { font: 600 12px 'Inter', sans-serif; fill: ${p.textColor || '#c9d1d9'}; }
+    ${animStyles}
   </style>
-  <rect x="1" y="1" width="${p.width - 2}" height="${p.height - 2}" rx="${p.borderRadius}" fill="${p.bgColor}" ${p.borderStyle}/>
-  
-  <!-- Header with icon -->
-  <g transform="translate(${centerX}, 28)" ${animClass1}>
-    <text text-anchor="middle" font-size="18" y="0">🤙</text>
-    <text text-anchor="middle" class="title" y="22">Random Dev Quote</text>
-  </g>
-  
+
+  <!-- Card background with border -->
+  <rect x="1" y="1" width="${cardWidth - 2}" height="${cardHeight - 2}" rx="${p.borderRadius || 12}" fill="url(#quoteBg)" stroke="${p.borderColor || '#0CF709'}" stroke-width="2"/>
+
+  <!-- Title: Dev Quote -->
+  <text x="25" y="30" class="title${animate ? ' anim d1' : ''}">Dev Quote</text>
+
   <!-- Opening quote mark -->
-  <text class="quote-mark${animate ? ' anim d2' : ''}" x="50" y="${startY}">"</text>
-  
-  <!-- Quote text - centered with padding -->
-  <text class="quote-text${animate ? ' anim d2' : ''}" x="${centerX}" y="${startY + 10}" text-anchor="middle">${quoteLines}</text>
-  
+  <text x="25" y="70" class="quote-mark${animate ? ' anim d1' : ''}">"</text>
+
+  <!-- GitHub Octocat logo -->
+  <g transform="translate(${cardWidth - 55}, 15)" class="${animate ? 'anim d1' : ''}">
+    <circle cx="12" cy="12" r="18" fill="#1f2937"/>
+    <g transform="scale(1)" fill="${p.textColor || '#c9d1d9'}">
+      <path d="${octocatPath}"/>
+    </g>
+  </g>
+
+  <!-- Quote text - centered -->
+  <text class="quote-text${animate ? ' anim d2' : ''}" x="${cardWidth / 2}" y="${startY}" text-anchor="middle">${quoteLines}</text>
+
   <!-- Closing quote mark -->
-  <text class="quote-mark${animate ? ' anim d2' : ''}" x="${p.width - 70}" y="${startY + totalTextHeight}">"</text>
-  
-  <!-- Author - fixed at bottom with proper spacing -->
-  <text class="quote-author${animate ? ' anim d3' : ''}" x="${centerX}" y="${p.height - 18}" text-anchor="middle">— ${quote.author}</text>
+  <text x="${cardWidth - 55}" y="${startY + totalTextHeight + 10}" class="quote-mark${animate ? ' anim d2' : ''}">"</text>
+
+  <!-- Author attribution -->
+  <text class="quote-author${animate ? ' anim d3' : ''}" x="${cardWidth / 2}" y="${cardHeight - 18}" text-anchor="middle">— ${quote.author}</text>
 </svg>`;
 }
 
@@ -695,7 +974,7 @@ function generateCustomSVG(p: any): string {
   const centerX = p.width / 2;
   const centerY = p.height / 2;
   const scaleClass = p.animate ? 'class="animate-scale"' : '';
-  
+
   return `
 <svg width="${p.width}" height="${p.height}" viewBox="0 0 ${p.width} ${p.height}" xmlns="http://www.w3.org/2000/svg">
   ${p.commonStyles}
@@ -707,7 +986,7 @@ function generateCustomSVG(p: any): string {
 function generateBannerSVG(p: any): string {
   const { bannerName, bannerDescription, waveStyle, animate, speed, gradientStart, gradientEnd } = p;
   const centerX = p.width / 2;
-  
+
   // Get speed multiplier for animations
   const getSpeedMultiplier = (s: string): number => {
     const multipliers: Record<string, number> = { slow: 2, normal: 1, fast: 0.5 };
@@ -715,12 +994,12 @@ function generateBannerSVG(p: any): string {
   };
   const m = getSpeedMultiplier(speed);
   const waveDuration = 20 * m;
-  
+
   // Generate wave paths based on style
   const getWavePaths = (style: string): string => {
     const h = p.height;
     const w = p.width;
-    
+
     const waveStyles: Record<string, { path1: string; path2: string }> = {
       wave: {
         path1: `M0 0L 0 ${h * 0.6}Q ${w * 0.25} ${h * 0.8} ${w * 0.5} ${h * 0.65}T ${w} ${h * 0.78}L ${w} 0 Z;M0 0L 0 ${h * 0.73}Q ${w * 0.25} ${h * 0.8} ${w * 0.5} ${h * 0.7}T ${w} ${h * 0.65}L ${w} 0 Z;M0 0L 0 ${h * 0.83}Q ${w * 0.25} ${h * 0.68} ${w * 0.5} ${h * 0.83}T ${w} ${h * 0.65}L ${w} 0 Z;M0 0L 0 ${h * 0.6}Q ${w * 0.25} ${h * 0.8} ${w * 0.5} ${h * 0.65}T ${w} ${h * 0.78}L ${w} 0 Z`,
@@ -739,56 +1018,56 @@ function generateBannerSVG(p: any): string {
         path2: `M0 0L 0 ${h * 0.5}L ${w * 0.3} ${h * 0.65}L ${w * 0.5} ${h * 0.45}L ${w * 0.7} ${h * 0.6}L ${w} ${h * 0.5}L ${w} 0 Z;M0 0L 0 ${h * 0.65}L ${w * 0.3} ${h * 0.45}L ${w * 0.5} ${h * 0.6}L ${w * 0.7} ${h * 0.5}L ${w} ${h * 0.65}L ${w} 0 Z;M0 0L 0 ${h * 0.45}L ${w * 0.3} ${h * 0.6}L ${w * 0.5} ${h * 0.5}L ${w * 0.7} ${h * 0.65}L ${w} ${h * 0.45}L ${w} 0 Z;M0 0L 0 ${h * 0.5}L ${w * 0.3} ${h * 0.65}L ${w * 0.5} ${h * 0.45}L ${w * 0.7} ${h * 0.6}L ${w} ${h * 0.5}L ${w} 0 Z`,
       },
     };
-    
+
     return waveStyles[style] ? JSON.stringify(waveStyles[style]) : JSON.stringify(waveStyles.wave);
   };
-  
+
   const wavePaths = JSON.parse(getWavePaths(waveStyle));
   const keyTimes = waveStyle === 'pulse' || waveStyle === 'flow' ? '0;0.5;1' : '0;0.333;0.667;1';
-  const keySplines = waveStyle === 'pulse' || waveStyle === 'flow' 
-    ? '0.4 0 0.6 1;0.4 0 0.6 1' 
+  const keySplines = waveStyle === 'pulse' || waveStyle === 'flow'
+    ? '0.4 0 0.6 1;0.4 0 0.6 1'
     : '0.2 0 0.2 1;0.2 0 0.2 1;0.2 0 0.2 1';
-  
+
   const waveAnimation = animate ? `
-    <animate 
-      attributeName="d" 
-      dur="${waveDuration}s" 
-      repeatCount="indefinite" 
-      keyTimes="${keyTimes}" 
-      calcMode="spline" 
+    <animate
+      attributeName="d"
+      dur="${waveDuration}s"
+      repeatCount="indefinite"
+      keyTimes="${keyTimes}"
+      calcMode="spline"
       keySplines="${keySplines}"
       values="${wavePaths.path1}"/>
   ` : '';
-  
+
   const waveAnimation2 = animate ? `
-    <animate 
-      attributeName="d" 
-      dur="${waveDuration}s" 
-      repeatCount="indefinite" 
-      keyTimes="${keyTimes}" 
-      calcMode="spline" 
+    <animate
+      attributeName="d"
+      dur="${waveDuration}s"
+      repeatCount="indefinite"
+      keyTimes="${keyTimes}"
+      calcMode="spline"
       keySplines="${keySplines}"
       begin="-${waveDuration / 2}s"
       values="${wavePaths.path2}"/>
   ` : '';
-  
+
   // Calculate font sizes based on width
   const nameFontSize = Math.min(50, p.width / 12);
   const descFontSize = Math.min(20, p.width / 30);
-  
+
   return `
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${p.width}" height="${p.height}" viewBox="0 0 ${p.width} ${p.height}">
   <style>
-    .banner-name { 
-      font-size: ${nameFontSize}px; 
-      font-weight: 700; 
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; 
+    .banner-name {
+      font-size: ${nameFontSize}px;
+      font-weight: 700;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
       fill: ${p.primaryColor};
     }
-    .banner-desc { 
-      font-size: ${descFontSize}px; 
-      font-weight: 500; 
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; 
+    .banner-desc {
+      font-size: ${descFontSize}px;
+      font-weight: 500;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
       fill: ${p.primaryColor};
     }
     ${animate ? `
@@ -801,7 +1080,7 @@ function generateBannerSVG(p: any): string {
     }
     ` : ''}
   </style>
-  
+
   <defs>
     <linearGradient id="waveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="${gradientStart}"/>
@@ -811,10 +1090,10 @@ function generateBannerSVG(p: any): string {
       <rect x="0" y="0" width="${p.width}" height="${p.height}" rx="${p.borderRadius}"/>
     </clipPath>
   </defs>
-  
+
   <!-- Background -->
   <rect x="0" y="0" width="${p.width}" height="${p.height}" rx="${p.borderRadius}" fill="${p.bgColor}"/>
-  
+
   <!-- Animated Waves -->
   <g clip-path="url(#roundedClip)">
     <g transform="translate(${centerX}, ${p.height / 2}) scale(1, 1) translate(-${centerX}, -${p.height / 2})">
@@ -826,10 +1105,10 @@ function generateBannerSVG(p: any): string {
       </path>
     </g>
   </g>
-  
+
   <!-- Border -->
   ${p.borderStyle ? `<rect x="1" y="1" width="${p.width - 2}" height="${p.height - 2}" rx="${p.borderRadius}" fill="none" ${p.borderStyle}/>` : ''}
-  
+
   <!-- Text Content -->
   <text text-anchor="middle" alignment-baseline="middle" x="50%" y="40%" class="banner-name">${bannerName}</text>
   <text text-anchor="middle" alignment-baseline="middle" x="50%" y="60%" class="banner-desc">${bannerDescription}</text>
@@ -840,4 +1119,13 @@ function formatNumber(num: number): string {
   if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
   if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
   return num.toString();
+}
+
+function escapeHTML(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }

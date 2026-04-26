@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
+import { PageTransition } from "@/components/layout/PageTransition";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { CardPreview } from "@/components/generator/CardPreview";
-import { TemplateGallery } from "@/components/generator/TemplateGallery";
+import { ThemeSelector } from "@/components/generator/ThemeSelector";
+import { templates } from "@/lib/templates";
 import { CustomizationPanel } from "@/components/generator/CustomizationPanel";
 import { LinkGenerator } from "@/components/generator/LinkGenerator";
 import { Search, Sparkles, RefreshCw } from "lucide-react";
@@ -15,8 +17,9 @@ import { useGitHubStats, GitHubStats } from "@/hooks/useGitHubStats";
 import { useDevQuote, DevQuote } from "@/hooks/useDevQuote";
 import { useQuoteOfTheDay } from "@/hooks/useQuoteOfTheDay";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import confetti from "canvas-confetti";
 
-export type CardType = "stats" | "languages" | "streak" | "activity" | "quote" | "custom" | "banner";
+export type CardType = "stats" | "languages" | "streak" | "activity" | "quote" | "custom" | "banner" | "contribution";
 
 export type QuoteTopic = "random" | "debugging" | "coffee" | "deadlines" | "code-reviews" | "testing";
 
@@ -33,6 +36,10 @@ export interface CardConfig {
   borderColor: string;
   borderRadius: number;
   showBorder: boolean;
+  paddingTop: number;
+  paddingRight: number;
+  paddingBottom: number;
+  paddingLeft: number;
   customText: string;
   width: number;
   height: number;
@@ -62,6 +69,10 @@ const defaultConfig: CardConfig = {
   borderColor: "#0CF709",
   borderRadius: 12,
   showBorder: true,
+  paddingTop: 25,
+  paddingRight: 25,
+  paddingBottom: 25,
+  paddingLeft: 25,
   customText: "",
   width: 495,
   height: 195,
@@ -74,8 +85,8 @@ const defaultConfig: CardConfig = {
   gradientEnd: "#764ba2",
   previewFormat: "img",
   quoteTopic: "random",
-  bannerName: "",
-  bannerDescription: "",
+  bannerName: "Your Name",
+  bannerDescription: "Developer | Creator | Builder",
   waveStyle: "wave",
 };
 
@@ -93,12 +104,21 @@ export default function Generator() {
   const [githubData, setGithubData] = useState<GitHubStats | null>(null);
   const [currentQuote, setCurrentQuote] = useState<DevQuote | null>(null);
   const { toast } = useToast();
-  
+
   const { loading: statsLoading, error: statsError, fetchStats } = useGitHubStats();
   const { loading: quoteLoading, generateQuote } = useDevQuote();
   const { qotd } = useQuoteOfTheDay();
 
   const isGenerating = statsLoading || quoteLoading;
+
+  const triggerConfetti = () => {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#0CF709', '#00e1ff', '#667eea'],
+    });
+  };
 
   const handleGenerate = async () => {
     if (!config.username && config.type !== "quote" && config.type !== "custom") {
@@ -115,6 +135,7 @@ export default function Generator() {
       const quote = await generateQuote(topic);
       if (quote) {
         setCurrentQuote(quote);
+        triggerConfetti();
         toast({
           title: "Quote generated!",
           description: "A unique dev quote has been created.",
@@ -132,9 +153,10 @@ export default function Generator() {
     }
 
     const result = await fetchStats(config.username);
-    
+
     if (result) {
       setGithubData(result);
+      triggerConfetti();
       toast({
         title: "Stats fetched!",
         description: `Successfully fetched data for ${config.username}`,
@@ -156,11 +178,28 @@ export default function Generator() {
     }
   }, [config.type]);
 
+  // Update dimensions when card type changes
+  useEffect(() => {
+    const typeDimensions: Record<string, { width: number; height: number }> = {
+      languages: { width: 300, height: 300 },
+      contribution: { width: 620, height: 300 },
+      stats: { width: 495, height: 195 },
+      streak: { width: 495, height: 195 },
+      activity: { width: 495, height: 195 },
+      quote: { width: 495, height: 195 },
+      banner: { width: 495, height: 195 },
+      custom: { width: 495, height: 195 },
+    };
+    const dims = typeDimensions[config.type] || { width: 495, height: 195 };
+    setConfig((prev) => ({ ...prev, width: dims.width, height: dims.height }));
+  }, [config.type]);
+
   const handleRefreshQuote = async () => {
     const topic = config.quoteTopic === "random" ? undefined : config.quoteTopic;
     const quote = await generateQuote(topic);
     if (quote) {
       setCurrentQuote(quote);
+      triggerConfetti(); // Also trigger confetti on manual refresh
     }
   };
 
@@ -168,11 +207,54 @@ export default function Generator() {
     setConfig((prev) => ({ ...prev, ...updates }));
   };
 
+  const handleMagicTheme = () => {
+    // 1. Pick a random template
+    const randomTemplate = templates[Math.floor(Math.random() * templates.length)];
+
+    // 2. Decide if we want gradients (70% chance)
+    const enableGradient = Math.random() > 0.3;
+
+    // 3. Setup gradient colors based on template
+    // We can swap primary/secondary or use them as is for gradients
+    const gradientStart = Math.random() > 0.5 ? randomTemplate.colors.primary : randomTemplate.colors.secondary;
+    const gradientEnd = Math.random() > 0.5 ? randomTemplate.colors.secondary : randomTemplate.colors.primary;
+
+    // 4. Random angle
+    const angle = Math.floor(Math.random() * 360);
+
+    setConfig(prev => ({
+      ...prev,
+      theme: randomTemplate.id,
+      gradientEnabled: enableGradient,
+      gradientAngle: angle,
+      gradientStart: gradientStart,
+      gradientEnd: gradientEnd,
+      // Also potentially randomize animation
+      animation: Math.random() > 0.5 ? "fadeIn" : (Math.random() > 0.5 ? "slideIn" : "scaleIn"),
+    }));
+
+    // 5. Celebrate!
+    confetti({
+      particleCount: 150,
+      spread: 100,
+      origin: { y: 0.6 },
+      colors: [randomTemplate.colors.primary, randomTemplate.colors.secondary, '#ffffff'],
+      ticks: 200,
+    });
+
+    toast({
+      title: "✨ Magic Theme Applied!",
+      description: `Switched to ${randomTemplate.name} with ${enableGradient ? 'gradient' : 'flat'} style.`,
+      className: "border-primary/50 text-foreground bg-background/80 backdrop-blur-xl",
+    });
+  };
+
   return (
     <Layout>
-      <div className="min-h-screen py-12">
-        <div className="container mx-auto px-4">
-          {/* Header */}
+      <PageTransition>
+        <div className="min-h-screen py-12">
+          <div className="container mx-auto px-4">
+            {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
               <span className="gradient-text">Stats Generator</span>
@@ -203,22 +285,25 @@ export default function Generator() {
                       disabled={config.type === "quote" || config.type === "custom" || config.type === "banner"}
                     />
                   </div>
-                  <Button 
-                    onClick={handleGenerate} 
+                  <Button
+                    onClick={handleGenerate}
                     disabled={isGenerating}
-                    className="h-12 px-6"
+                    className="group relative h-12 px-6 overflow-hidden bg-primary hover:bg-primary/90 transition-all duration-300 hover:shadow-[0_0_20px_rgba(12,247,9,0.3)] hover:scale-[1.02] active:scale-[0.98]"
                   >
-                    {isGenerating ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-2" />
-                        {config.type === "quote" ? "Generating..." : "Fetching..."}
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        {config.type === "quote" ? "Generate Quote" : "Fetch Stats"}
-                      </>
-                    )}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-[200%] group-hover:translate-x-[200%] transition-transform duration-700 ease-in-out" />
+                    <span className="relative flex items-center">
+                      {isGenerating ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-2" />
+                          {config.type === "quote" ? "Generating..." : "Fetching..."}
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4 mr-2 group-hover:rotate-12 transition-transform" />
+                          {config.type === "quote" ? "Generate Quote" : "Fetch Stats"}
+                        </>
+                      )}
+                    </span>
                   </Button>
                 </div>
                 {config.type !== "quote" && config.type !== "custom" && config.type !== "banner" && (
@@ -233,17 +318,18 @@ export default function Generator() {
                 <Label className="text-lg font-semibold mb-4 block">
                   Card Type
                 </Label>
-                <Tabs 
-                  value={config.type} 
+                <Tabs
+                  value={config.type}
                   onValueChange={(v) => updateConfig({ type: v as CardType })}
                 >
-                  <TabsList className="grid grid-cols-4 lg:grid-cols-7 w-full h-auto bg-background/30 backdrop-blur-sm">
+                  <TabsList className="grid grid-cols-4 lg:grid-cols-4 w-full h-auto bg-background/30 backdrop-blur-sm">
                     <TabsTrigger value="stats" className="py-3 data-[state=active]:bg-secondary/20">📊 Stats</TabsTrigger>
                     <TabsTrigger value="languages" className="py-3 data-[state=active]:bg-secondary/20">💻 Languages</TabsTrigger>
                     <TabsTrigger value="streak" className="py-3 data-[state=active]:bg-secondary/20">🔥 Streak</TabsTrigger>
                     <TabsTrigger value="activity" className="py-3 data-[state=active]:bg-secondary/20">📈 Activity</TabsTrigger>
                     <TabsTrigger value="quote" className="py-3 data-[state=active]:bg-secondary/20">💬 Quote</TabsTrigger>
                     <TabsTrigger value="banner" className="py-3 data-[state=active]:bg-secondary/20">🎨 Banner</TabsTrigger>
+                    <TabsTrigger value="contribution" className="py-3 data-[state=active]:bg-secondary/20">🟩 Contribution</TabsTrigger>
                     <TabsTrigger value="custom" className="py-3 data-[state=active]:bg-secondary/20">✨ Custom</TabsTrigger>
                   </TabsList>
                 </Tabs>
@@ -292,12 +378,10 @@ export default function Generator() {
 
               {/* Template Gallery */}
               <GlassPanel accent="purple">
-                <Label className="text-lg font-semibold mb-4 block">
-                  Choose a Template
-                </Label>
-                <TemplateGallery 
+                <ThemeSelector
                   selectedTheme={config.theme}
-                  onSelectTheme={(theme) => updateConfig({ theme })}
+                  onSelectTheme={(t) => updateConfig({ theme: t })}
+                  onMagicTheme={handleMagicTheme}
                 />
               </GlassPanel>
 
@@ -306,7 +390,7 @@ export default function Generator() {
                 <Label className="text-lg font-semibold mb-4 block">
                   Customize
                 </Label>
-                <CustomizationPanel 
+                <CustomizationPanel
                   config={config}
                   updateConfig={updateConfig}
                 />
@@ -324,8 +408,8 @@ export default function Generator() {
                 <div className="relative rounded-lg overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 to-transparent backdrop-blur-md" />
                   <div className="relative p-4 rounded-lg border border-secondary/10 bg-background/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
-                    <CardPreview 
-                      config={config} 
+                    <CardPreview
+                      config={config}
                       githubData={githubData}
                       quote={currentQuote}
                     />
@@ -358,6 +442,7 @@ export default function Generator() {
           </div>
         </div>
       </div>
+      </PageTransition>
     </Layout>
   );
 }
