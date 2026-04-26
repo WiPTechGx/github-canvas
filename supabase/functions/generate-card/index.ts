@@ -215,6 +215,33 @@ function generateSVG(params: CardParams): string {
     quote,
   } = params;
 
+  // Sanitize all user-controllable text parameters
+  const safeUsername = escapeHTML(username);
+  const safeCustomText = escapeHTML(customText);
+  const safeBannerName = escapeHTML(bannerName);
+  const safeBannerDescription = escapeHTML(bannerDescription);
+
+  // Sanitize colors as well since they are used in SVG attributes
+  const safeBgColor = escapeHTML(bgColor);
+  const safePrimaryColor = escapeHTML(primaryColor);
+  const safeSecondaryColor = escapeHTML(secondaryColor);
+  const safeTextColor = escapeHTML(textColor);
+  const safeBorderColor = escapeHTML(borderColor);
+  const safeGradientStart = escapeHTML(gradientStart);
+  const safeGradientEnd = escapeHTML(gradientEnd);
+
+  // Sanitize nested objects
+  const safeQuote = quote ? {
+    quote: escapeHTML(quote.quote),
+    author: escapeHTML(quote.author)
+  } : undefined;
+
+  const safeLanguages = languages?.map(lang => ({
+    ...lang,
+    name: escapeHTML(lang.name),
+    color: escapeHTML(lang.color)
+  }));
+
   // Type-specific default dimensions
   const defaultDimensions: Record<string, { width: number; height: number }> = {
     languages: { width: 300, height: 300 },
@@ -225,7 +252,7 @@ function generateSVG(params: CardParams): string {
   const height = params.height || defaults.height;
 
   const borderStyle = showBorder
-    ? `stroke="${borderColor}" stroke-width="2"`
+    ? `stroke="${safeBorderColor}" stroke-width="2"`
     : '';
 
   // Gradient helper functions
@@ -237,8 +264,8 @@ function generateSVG(params: CardParams): string {
       return `
         <defs>
           <radialGradient id="${id}" cx="50%" cy="50%" r="70%">
-            <stop offset="0%" stop-color="${gradientStart}"/>
-            <stop offset="100%" stop-color="${gradientEnd}"/>
+            <stop offset="0%" stop-color="${safeGradientStart}"/>
+            <stop offset="100%" stop-color="${safeGradientEnd}"/>
           </radialGradient>
         </defs>`;
     }
@@ -252,13 +279,13 @@ function generateSVG(params: CardParams): string {
     return `
       <defs>
         <linearGradient id="${id}" x1="${x1}%" y1="${y1}%" x2="${x2}%" y2="${y2}%">
-          <stop offset="0%" stop-color="${gradientStart}"/>
-          <stop offset="100%" stop-color="${gradientEnd}"/>
+          <stop offset="0%" stop-color="${safeGradientStart}"/>
+          <stop offset="100%" stop-color="${safeGradientEnd}"/>
         </linearGradient>
       </defs>`;
   };
 
-  const getBgFill = (): string => gradient ? 'url(#bgGradient)' : bgColor;
+  const getBgFill = (): string => gradient ? 'url(#bgGradient)' : safeBgColor;
 
   // Speed multiplier
   const getSpeedMultiplier = (s: string): number => {
@@ -287,7 +314,7 @@ function generateSVG(params: CardParams): string {
         .d1 { animation-delay: ${0.15 * m}s; } .d2 { animation-delay: ${0.3 * m}s; } .d3 { animation-delay: ${0.45 * m}s; } .d4 { animation-delay: ${0.6 * m}s; } .d5 { animation-delay: ${0.75 * m}s; }
       `,
       glow: `
-        @keyframes glow { 0%, 100% { filter: drop-shadow(0 0 3px ${primaryColor}40); } 50% { filter: drop-shadow(0 0 12px ${primaryColor}80); } }
+        @keyframes glow { 0%, 100% { filter: drop-shadow(0 0 3px ${safePrimaryColor}40); } 50% { filter: drop-shadow(0 0 12px ${safePrimaryColor}80); } }
         .anim { animation: glow ${2 * m}s ease-in-out infinite; }
       `,
       blink: `
@@ -330,13 +357,13 @@ function generateSVG(params: CardParams): string {
   const commonStyles = `
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap');
-      .title { font: 600 18px 'Inter', sans-serif; fill: ${primaryColor}; }
+      .title { font: 600 18px 'Inter', sans-serif; fill: ${safePrimaryColor}; }
       .stat-value { font: 700 24px 'Inter', sans-serif; }
-      .stat-label { font: 400 11px 'Inter', sans-serif; fill: ${textColor}; opacity: 0.7; }
-      .text { font: 400 14px 'Inter', sans-serif; fill: ${textColor}; }
-      .small { font: 400 10px 'Inter', sans-serif; fill: ${textColor}; opacity: 0.5; }
-      .quote { font: italic 400 16px 'Inter', sans-serif; fill: ${textColor}; }
-      .author { font: 400 13px 'Inter', sans-serif; fill: ${secondaryColor}; }
+      .stat-label { font: 400 11px 'Inter', sans-serif; fill: ${safeTextColor}; opacity: 0.7; }
+      .text { font: 400 14px 'Inter', sans-serif; fill: ${safeTextColor}; }
+      .small { font: 400 10px 'Inter', sans-serif; fill: ${safeTextColor}; opacity: 0.5; }
+      .quote { font: italic 400 16px 'Inter', sans-serif; fill: ${safeTextColor}; }
+      .author { font: 400 13px 'Inter', sans-serif; fill: ${safeSecondaryColor}; }
       ${animStyles}
     </style>
   `;
@@ -348,7 +375,7 @@ function generateSVG(params: CardParams): string {
     case 'stats':
       return generateStatsSVG({
         width, height, bgColor: bgFill, borderRadius, borderStyle,
-        primaryColor, secondaryColor, textColor, username, animate,
+        primaryColor: safePrimaryColor, secondaryColor: safeSecondaryColor, textColor: safeTextColor, username: safeUsername, animate,
         stats: stats || { totalStars: 0, publicRepos: 0, followers: 0, totalForks: 0 },
         commonStyles, gradientDefs,
       });
@@ -357,8 +384,8 @@ function generateSVG(params: CardParams): string {
       return generateLanguagesSVG({
         width, height, bgColor: bgFill, borderRadius, borderStyle,
         paddingTop, paddingRight, paddingBottom, paddingLeft,
-        primaryColor, secondaryColor, textColor, animate,
-        languages: languages || [],
+        primaryColor: safePrimaryColor, secondaryColor: safeSecondaryColor, textColor: safeTextColor, animate,
+        languages: safeLanguages || [],
         commonStyles, gradientDefs,
       });
 
@@ -366,7 +393,7 @@ function generateSVG(params: CardParams): string {
       return generateStreakSVG({
         width, height, bgColor: bgFill, borderRadius, borderStyle,
         paddingTop, paddingRight, paddingBottom, paddingLeft,
-        primaryColor, secondaryColor, textColor, animate,
+        primaryColor: safePrimaryColor, secondaryColor: safeSecondaryColor, textColor: safeTextColor, animate,
         streak: streak || { current: 0, longest: 0, total: 0 },
         commonStyles, gradientDefs,
       });
@@ -374,10 +401,10 @@ function generateSVG(params: CardParams): string {
     case 'contribution':
       return generateContributionSVG({
         width, height, bgColor: bgFill, borderRadius, borderStyle,
-        primaryColor, secondaryColor, textColor, animate,
+        primaryColor: safePrimaryColor, secondaryColor: safeSecondaryColor, textColor: safeTextColor, animate,
         contributionDays: streak?.days || [],
         streak: streak || { current: 0, total: 0 },
-        username,
+        username: safeUsername,
         commonStyles, gradientDefs,
       });
 
@@ -385,7 +412,7 @@ function generateSVG(params: CardParams): string {
       return generateActivitySVG({
         width, height, bgColor: bgFill, borderRadius, borderStyle,
         paddingTop, paddingRight, paddingBottom, paddingLeft,
-        primaryColor, secondaryColor, textColor, animate,
+        primaryColor: safePrimaryColor, secondaryColor: safeSecondaryColor, textColor: safeTextColor, animate,
         activity: activity || Array(30).fill(0),
         commonStyles, gradientDefs,
       });
@@ -394,8 +421,8 @@ function generateSVG(params: CardParams): string {
       return generateQuoteSVG({
         width, height, bgColor: bgFill, borderRadius, borderStyle,
         paddingTop, paddingRight, paddingBottom, paddingLeft,
-        primaryColor, secondaryColor, textColor, animate,
-        quote: quote || { quote: "Code is poetry.", author: "Anonymous" },
+        primaryColor: safePrimaryColor, secondaryColor: safeSecondaryColor, textColor: safeTextColor, animate,
+        quote: safeQuote || { quote: "Code is poetry.", author: "Anonymous" },
         commonStyles, gradientDefs,
       });
 
@@ -403,7 +430,7 @@ function generateSVG(params: CardParams): string {
       return generateCustomSVG({
         width, height, bgColor: bgFill, borderRadius, borderStyle,
         paddingTop, paddingRight, paddingBottom, paddingLeft,
-        primaryColor, textColor, customText, animate,
+        primaryColor: safePrimaryColor, textColor: safeTextColor, customText: safeCustomText, animate,
         commonStyles, gradientDefs,
       });
 
@@ -411,11 +438,11 @@ function generateSVG(params: CardParams): string {
       return generateBannerSVG({
         width, height, bgColor: bgFill, borderRadius, borderStyle,
         paddingTop, paddingRight, paddingBottom, paddingLeft,
-        primaryColor, secondaryColor, textColor, animate, speed,
-        bannerName: bannerName || 'Your Name',
-        bannerDescription: bannerDescription || 'Developer | Creator | Builder',
+        primaryColor: safePrimaryColor, secondaryColor: safeSecondaryColor, textColor: safeTextColor, animate, speed,
+        bannerName: safeBannerName || 'Your Name',
+        bannerDescription: safeBannerDescription || 'Developer | Creator | Builder',
         waveStyle,
-        gradientStart, gradientEnd,
+        gradientStart: safeGradientStart, gradientEnd: safeGradientEnd,
         commonStyles, gradientDefs,
       });
 
@@ -423,7 +450,7 @@ function generateSVG(params: CardParams): string {
       return generateStatsSVG({
         width, height, bgColor: bgFill, borderRadius, borderStyle,
         paddingTop, paddingRight, paddingBottom, paddingLeft,
-        primaryColor, secondaryColor, textColor, username, animate,
+        primaryColor: safePrimaryColor, secondaryColor: safeSecondaryColor, textColor: safeTextColor, username: safeUsername, animate,
         stats: stats || { totalStars: 0, publicRepos: 0, followers: 0, totalForks: 0 },
         commonStyles, gradientDefs,
       });
@@ -438,25 +465,25 @@ function generateStatsSVG(p: any): string {
   ${p.gradientDefs || ''}
   ${p.commonStyles}
   <rect x="1" y="1" width="${p.width - 2}" height="${p.height - 2}" rx="${p.borderRadius}" fill="${p.bgColor}" ${p.borderStyle}/>
-  
+
   <g transform="translate(25, 25)">
     <text class="title">${p.username}'s GitHub Stats</text>
-    
+
     <g transform="translate(0, 45)">
       <text class="stat-value" fill="${p.primaryColor}">⭐ ${formatNumber(stats.totalStars)}</text>
       <text class="stat-label" y="22">Total Stars</text>
     </g>
-    
+
     <g transform="translate(115, 45)">
       <text class="stat-value" fill="${p.secondaryColor}">📦 ${stats.publicRepos}</text>
       <text class="stat-label" y="22">Repositories</text>
     </g>
-    
+
     <g transform="translate(230, 45)">
       <text class="stat-value" fill="${p.primaryColor}">👥 ${formatNumber(stats.followers)}</text>
       <text class="stat-label" y="22">Followers</text>
     </g>
-    
+
     <g transform="translate(345, 45)">
       <text class="stat-value" fill="${p.secondaryColor}">🔀 ${formatNumber(stats.totalForks)}</text>
       <text class="stat-label" y="22">Total Forks</text>
@@ -540,18 +567,18 @@ function generateLanguagesSVG(p: any): string {
         <rect x="24" y="${y}" width="232" height="${rowHeight}" rx="14" fill="none" stroke="#DDE6FF" stroke-opacity="0.8"/>
         <path d="M28 ${y + 4} H252" stroke="#FFFFFF" stroke-width="2" opacity="0.65" stroke-linecap="round"/>
       </g>
-      
+
       <!-- Subtle glow -->
       <circle cx="40" cy="${y + 14}" r="14" fill="${grad.start}" opacity="0.2" filter="url(#bokeh)"/>
-      
+
       <!-- Badge -->
       <rect x="32" y="${y + 5}" width="18" height="18" rx="6" fill="${grad.start}" opacity="0.95"/>
       <text x="41" y="${y + 18}" text-anchor="middle" class="mini" fill="#111827">${badge}</text>
-      
+
       <!-- Label & Percentage -->
       <text x="58" y="${y + 18}" class="label">${lang.name}</text>
       <text x="244" y="${y + 18}" text-anchor="end" class="pct" fill="${grad.pct}">${Math.round(lang.percentage)}%</text>
-      
+
       <!-- Progress Bar -->
       <rect x="58" y="${y + 20}" width="${barWidth}" height="6" rx="3" fill="url(#gLang${i})" filter="url(#barGlow)"/>
     </g>`;
@@ -676,7 +703,7 @@ function generateStreakSVG(p: any): string {
       </mask>
   </defs>
   <rect x="1" y="1" width="${p.width - 2}" height="${p.height - 2}" rx="${p.borderRadius}" fill="${p.bgColor}" ${p.borderStyle}/>
-  
+
   <g style="isolation: isolate">
       <line x1="${p.width / 3}" y1="28" x2="${p.width / 3}" y2="170" vector-effect="non-scaling-stroke" stroke-width="1" stroke="${p.borderColor}" stroke-linejoin="miter" stroke-linecap="square" stroke-miterlimit="3" opacity="0.5"/>
       <line x1="${(p.width / 3) * 2}" y1="28" x2="${(p.width / 3) * 2}" y2="170" vector-effect="non-scaling-stroke" stroke-width="1" stroke="${p.borderColor}" stroke-linejoin="miter" stroke-linecap="square" stroke-miterlimit="3" opacity="0.5"/>
@@ -688,7 +715,7 @@ function generateStreakSVG(p: any): string {
     <text text-anchor="middle" class="stat-label" y="64">Total Contributions</text>
     <text text-anchor="middle" class="small" y="94">${totalRange}</text>
   </g>
-  
+
   <!-- Center Section: Current Streak -->
   <g transform="translate(${p.width / 2}, 48)">
     <text text-anchor="middle" class="stat-value" fill="${p.secondaryColor}" y="32" style="animation: currstreak 0.6s linear forwards">${formatNumber(streak.current)}</text>
@@ -705,7 +732,7 @@ function generateStreakSVG(p: any): string {
         <path d="M 1.5 0.67 C 1.5 0.67 2.24 3.32 2.24 5.47 C 2.24 7.53 0.89 9.2 -1.17 9.2 C -3.23 9.2 -4.79 7.53 -4.79 5.47 L -4.76 5.11 C -6.78 7.51 -8 10.62 -8 13.99 C -8 18.41 -4.42 22 0 22 C 4.42 22 8 18.41 8 13.99 C 8 8.6 5.41 3.79 1.5 0.67 Z M -0.29 19 C -2.07 19 -3.51 17.6 -3.51 15.86 C -3.51 14.24 -2.46 13.1 -0.7 12.74 C 1.07 12.38 2.9 11.53 3.92 10.16 C 4.31 11.45 4.51 12.81 4.51 14.2 C 4.51 16.85 2.36 19 -0.29 19 Z" fill="${p.primaryColor}" stroke-opacity="0"/>
     </g>
   </g>
-  
+
   <!-- Right Section: Longest Streak -->
   <g transform="translate(${(p.width / 6) * 5}, 48)">
     <text text-anchor="middle" class="stat-value" fill="${p.primaryColor}" y="32">${formatNumber(streak.longest)}</text>
@@ -786,19 +813,19 @@ function generateContributionSVG(p: any): string {
     .total-value { font: 700 24px 'Inter', sans-serif; fill: #ffffff; }
     ${animStyles}
   </style>
-  
+
   <!-- Card background -->
   <rect x="1" y="1" width="${cardWidth - 2}" height="${cardHeight - 2}" rx="${p.borderRadius || 16}" fill="${p.bgColor || '#0d1117'}" stroke="${p.primaryColor || '#22c55e'}" stroke-width="2"/>
-  
+
   <!-- Header -->
   <g transform="translate(30, 30)">
     <!-- Avatar circle -->
     <circle cx="24" cy="24" r="24" fill="#6366f1"/>
     <text x="24" y="32" text-anchor="middle" font-size="22" font-weight="bold" fill="#ffffff">${initial}</text>
-    
+
     <!-- Title -->
     <text x="60" y="32" class="title">My contributions</text>
-    
+
     <!-- Streak badge on right -->
     <g transform="translate(${cardWidth - 190}, 0)">
       <text x="0" y="28" class="streak">Streak</text>
@@ -806,12 +833,12 @@ function generateContributionSVG(p: any): string {
       <text x="${currentStreak >= 10 ? 130 : 115}" y="28" font-size="18">🔥</text>
     </g>
   </g>
-  
+
   <!-- Contribution Grid -->
   <g>
     ${cells}
   </g>
-  
+
   <!-- Footer: Total contributions -->
   <g transform="translate(${cardWidth - 200}, ${cardHeight - 40})">
     <text x="0" y="0" class="total-value">${formatNumber(totalContributions)}</text>
@@ -885,9 +912,9 @@ function generateQuoteSVG(p: any): string {
   ).join('');
 
   const animStyles = animate ? `
-    @keyframes fadeInUp { 
-      0% { opacity: 0; transform: translateY(10px); } 
-      100% { opacity: 1; transform: translateY(0); } 
+    @keyframes fadeInUp {
+      0% { opacity: 0; transform: translateY(10px); }
+      100% { opacity: 1; transform: translateY(0); }
     }
     .anim { animation: fadeInUp 0.5s ease-out forwards; opacity: 0; }
     .d1 { animation-delay: 0.1s; }
@@ -914,16 +941,16 @@ function generateQuoteSVG(p: any): string {
     .quote-author { font: 600 12px 'Inter', sans-serif; fill: ${p.textColor || '#c9d1d9'}; }
     ${animStyles}
   </style>
-  
+
   <!-- Card background with border -->
   <rect x="1" y="1" width="${cardWidth - 2}" height="${cardHeight - 2}" rx="${p.borderRadius || 12}" fill="url(#quoteBg)" stroke="${p.borderColor || '#0CF709'}" stroke-width="2"/>
-  
+
   <!-- Title: Dev Quote -->
   <text x="25" y="30" class="title${animate ? ' anim d1' : ''}">Dev Quote</text>
-  
+
   <!-- Opening quote mark -->
   <text x="25" y="70" class="quote-mark${animate ? ' anim d1' : ''}">"</text>
-  
+
   <!-- GitHub Octocat logo -->
   <g transform="translate(${cardWidth - 55}, 15)" class="${animate ? 'anim d1' : ''}">
     <circle cx="12" cy="12" r="18" fill="#1f2937"/>
@@ -931,13 +958,13 @@ function generateQuoteSVG(p: any): string {
       <path d="${octocatPath}"/>
     </g>
   </g>
-  
+
   <!-- Quote text - centered -->
   <text class="quote-text${animate ? ' anim d2' : ''}" x="${cardWidth / 2}" y="${startY}" text-anchor="middle">${quoteLines}</text>
-  
+
   <!-- Closing quote mark -->
   <text x="${cardWidth - 55}" y="${startY + totalTextHeight + 10}" class="quote-mark${animate ? ' anim d2' : ''}">"</text>
-  
+
   <!-- Author attribution -->
   <text class="quote-author${animate ? ' anim d3' : ''}" x="${cardWidth / 2}" y="${cardHeight - 18}" text-anchor="middle">— ${quote.author}</text>
 </svg>`;
@@ -1002,23 +1029,23 @@ function generateBannerSVG(p: any): string {
     : '0.2 0 0.2 1;0.2 0 0.2 1;0.2 0 0.2 1';
 
   const waveAnimation = animate ? `
-    <animate 
-      attributeName="d" 
-      dur="${waveDuration}s" 
-      repeatCount="indefinite" 
-      keyTimes="${keyTimes}" 
-      calcMode="spline" 
+    <animate
+      attributeName="d"
+      dur="${waveDuration}s"
+      repeatCount="indefinite"
+      keyTimes="${keyTimes}"
+      calcMode="spline"
       keySplines="${keySplines}"
       values="${wavePaths.path1}"/>
   ` : '';
 
   const waveAnimation2 = animate ? `
-    <animate 
-      attributeName="d" 
-      dur="${waveDuration}s" 
-      repeatCount="indefinite" 
-      keyTimes="${keyTimes}" 
-      calcMode="spline" 
+    <animate
+      attributeName="d"
+      dur="${waveDuration}s"
+      repeatCount="indefinite"
+      keyTimes="${keyTimes}"
+      calcMode="spline"
       keySplines="${keySplines}"
       begin="-${waveDuration / 2}s"
       values="${wavePaths.path2}"/>
@@ -1031,16 +1058,16 @@ function generateBannerSVG(p: any): string {
   return `
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${p.width}" height="${p.height}" viewBox="0 0 ${p.width} ${p.height}">
   <style>
-    .banner-name { 
-      font-size: ${nameFontSize}px; 
-      font-weight: 700; 
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; 
+    .banner-name {
+      font-size: ${nameFontSize}px;
+      font-weight: 700;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
       fill: ${p.primaryColor};
     }
-    .banner-desc { 
-      font-size: ${descFontSize}px; 
-      font-weight: 500; 
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; 
+    .banner-desc {
+      font-size: ${descFontSize}px;
+      font-weight: 500;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
       fill: ${p.primaryColor};
     }
     ${animate ? `
@@ -1053,7 +1080,7 @@ function generateBannerSVG(p: any): string {
     }
     ` : ''}
   </style>
-  
+
   <defs>
     <linearGradient id="waveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="${gradientStart}"/>
@@ -1063,10 +1090,10 @@ function generateBannerSVG(p: any): string {
       <rect x="0" y="0" width="${p.width}" height="${p.height}" rx="${p.borderRadius}"/>
     </clipPath>
   </defs>
-  
+
   <!-- Background -->
   <rect x="0" y="0" width="${p.width}" height="${p.height}" rx="${p.borderRadius}" fill="${p.bgColor}"/>
-  
+
   <!-- Animated Waves -->
   <g clip-path="url(#roundedClip)">
     <g transform="translate(${centerX}, ${p.height / 2}) scale(1, 1) translate(-${centerX}, -${p.height / 2})">
@@ -1078,10 +1105,10 @@ function generateBannerSVG(p: any): string {
       </path>
     </g>
   </g>
-  
+
   <!-- Border -->
   ${p.borderStyle ? `<rect x="1" y="1" width="${p.width - 2}" height="${p.height - 2}" rx="${p.borderRadius}" fill="none" ${p.borderStyle}/>` : ''}
-  
+
   <!-- Text Content -->
   <text text-anchor="middle" alignment-baseline="middle" x="50%" y="40%" class="banner-name">${bannerName}</text>
   <text text-anchor="middle" alignment-baseline="middle" x="50%" y="60%" class="banner-desc">${bannerDescription}</text>
@@ -1092,4 +1119,13 @@ function formatNumber(num: number): string {
   if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
   if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
   return num.toString();
+}
+
+function escapeHTML(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
